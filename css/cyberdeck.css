@@ -187,3 +187,61 @@ ul {
     margin-bottom: 5px;
     letter-spacing: 1px;
 }
+
+/* --- ROUTING CONTROLS LAYOUT --- */
+.routing-modes {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.action-controls {
+    display: flex;
+    gap: 15px;
+    border-top: 1px dashed rgba(0, 255, 65, 0.3);
+    padding-top: 20px;
+}
+
+/* --- BUTTON STATES --- */
+.mode-btn.active-mode {
+    background: rgba(0, 255, 65, 0.2);
+    box-shadow: inset 0 0 10px var(--color-phosphor);
+}
+
+.action-btn {
+    background: transparent;
+    border: 2px solid var(--color-phosphor);
+    color: var(--color-phosphor);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.2rem;
+    padding: 15px 30px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+.action-btn:hover:not(:disabled) {
+    background: var(--color-phosphor);
+    color: var(--bg-void);
+    box-shadow: 0 0 20px var(--color-phosphor);
+}
+
+/* The Powered-Down State */
+button:disabled {
+    border-color: #333 !important;
+    color: #555 !important;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    text-shadow: none !important;
+}
+
+/* The Locked Node State */
+.node-locked {
+    border: 2px solid var(--color-amber) !important;
+    color: var(--color-amber) !important;
+    box-shadow: 0 0 15px rgba(255, 176, 0, 0.4) !important;
+    animation: none !important; /* Stops any RNG flashing */
+}

@@ -78,9 +78,15 @@
                 <div class="charity-node">Crisis Aid International</div>
             </div>
 
-            <div class="routing-controls">
-                <button class="mechanical-btn">[ ENGAGE: LOAD BALANCER ]</button>
-                <button class="mechanical-btn">[ ENGAGE: RNG PROTOCOL ]</button>
+            <div class="routing-modes">
+                <button id="btn-manual" class="mechanical-btn mode-btn active-mode">[ MODE: MANUAL ]</button>
+                <button id="btn-rng" class="mechanical-btn mode-btn">[ MODE: RNG PROTOCOL ]</button>
+                <button id="btn-split" class="mechanical-btn mode-btn">[ MODE: LOAD BALANCER ]</button>
+            </div>
+
+            <div class="action-controls">
+                <button id="btn-confirm" class="action-btn" disabled>[ CONFIRM UPLINK ]</button>
+                <button id="btn-donate" class="action-btn" disabled>[ INITIATE TRANSFER ]</button>
             </div>
         </section>
     </main>

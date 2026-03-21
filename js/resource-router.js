@@ -1,87 +1,152 @@
-// --- MODULE: GLOBAL RESOURCE ROUTING ---
+// --- MODULE: GLOBAL RESOURCE ROUTING (v2.0) ---
 
-// 1. Target the DOM Elements
+const paymentGateways = {
+    "Water for Good": "https://buy.stripe.com/your_link_1",
+    "Direct Relief": "https://buy.stripe.com/your_link_2",
+    "Village Enterprise": "https://buy.stripe.com/your_link_3",
+    "Peoples Consultants": "https://buy.stripe.com/your_link_4",
+    "Colorectal Cancer Alliance": "https://buy.stripe.com/your_link_5",
+    "Crisis Aid International": "https://buy.stripe.com/your_link_6"
+};
+
+// DOM Elements
 const nodes = document.querySelectorAll('.charity-node');
-// Grab the buttons (assuming Load Balancer is first, RNG is second in the HTML)
-const buttons = document.querySelectorAll('.mechanical-btn');
-const btnLoadBalancer = buttons[0];
-const btnRng = buttons[1];
+const modeBtns = document.querySelectorAll('.mode-btn');
+const btnManual = document.getElementById('btn-manual');
+const btnRng = document.getElementById('btn-rng');
+const btnSplit = document.getElementById('btn-split');
+const btnConfirm = document.getElementById('btn-confirm');
+const btnDonate = document.getElementById('btn-donate');
 
-// 2. Helper Function: Reset the Grid
-function systemReset() {
-    nodes.forEach(node => {
-        node.classList.remove('node-active');
-        node.style.borderColor = 'var(--color-phosphor)';
-        node.style.color = 'var(--color-phosphor)';
-    });
+// System State
+let systemLocked = false;
+let activeNodes = [];
+
+// --- CORE SYSTEM FUNCTIONS ---
+
+function updateSystemState() {
+    if (systemLocked) return;
+    
+    // Check how many nodes are currently active
+    activeNodes = Array.from(nodes).filter(n => n.classList.contains('node-active'));
+    
+    // Enable CONFIRM button only if at least 1 node is selected
+    btnConfirm.disabled = activeNodes.length === 0;
 }
 
-// 3. Mode: DIRECT OVERRIDE (Clicking a specific node)
+function resetNodes() {
+    if (systemLocked) return;
+    nodes.forEach(node => {
+        node.classList.remove('node-active');
+        node.style.opacity = '0.7';
+        node.style.backgroundColor = 'transparent';
+        node.style.color = 'var(--color-phosphor)';
+    });
+    updateSystemState();
+}
+
+function setActiveMode(selectedBtn) {
+    if (systemLocked) return;
+    modeBtns.forEach(btn => btn.classList.remove('active-mode'));
+    selectedBtn.classList.add('active-mode');
+    resetNodes();
+}
+
+// --- SELECTION MODES ---
+
+// 1. MANUAL MODE (Default)
 nodes.forEach(node => {
     node.addEventListener('click', () => {
-        systemReset(); // Clear previous selections
-        node.classList.add('node-active');
-        console.log(`[DIRECT OVERRIDE]: Data-pipe opened to ${node.innerText}`);
+        if (systemLocked || !btnManual.classList.contains('active-mode')) return;
         
-        // TODO: In Phase 4, we will trigger the Stripe redirect here
+        // Toggle the node on or off
+        node.classList.toggle('node-active');
+        updateSystemState();
     });
 });
 
-// 4. Mode: LOAD BALANCER (Split evenly)
-btnLoadBalancer.addEventListener('click', () => {
-    systemReset();
-    
-    // Slight delay for dramatic hardware effect
-    setTimeout(() => {
-        nodes.forEach(node => {
-            // We keep them phosphor green instead of amber to indicate a "split"
-            node.classList.add('node-active');
-            node.style.borderColor = 'var(--color-phosphor)';
-            node.style.color = 'var(--color-phosphor)';
-            node.style.boxShadow = 'inset 0 0 15px rgba(0, 255, 65, 0.2)';
-        });
-        console.log("[LOAD BALANCER]: Resources distributed evenly across all nodes.");
-    }, 200);
-});
+btnManual.addEventListener('click', () => setActiveMode(btnManual));
 
-// 5. Mode: RNG PROTOCOL (Randomizer)
+// 2. RNG PROTOCOL
 btnRng.addEventListener('click', () => {
-    // Prevent clicking multiple times while it's already running
-    if(btnRng.disabled) return; 
-    btnRng.disabled = true;
-    systemReset();
-
+    if (systemLocked) return;
+    setActiveMode(btnRng);
+    
+    // Disable buttons during the animation
+    modeBtns.forEach(b => b.disabled = true);
+    
     let jumps = 0;
-    // Randomize how many times it flashes before stopping (between 20 and 35)
     const maxJumps = Math.floor(Math.random() * 15) + 20; 
-    let currentSpeed = 40; // Starts blazingly fast in milliseconds
+    let currentSpeed = 40;
 
     function rngTick() {
-        systemReset();
-        
-        // Pick a random node and flash it green
+        resetNodes();
         const randomIndex = Math.floor(Math.random() * nodes.length);
-        nodes[randomIndex].style.opacity = '1';
-        nodes[randomIndex].style.backgroundColor = 'var(--color-phosphor)';
-        nodes[randomIndex].style.color = 'var(--bg-void)';
+        nodes[randomIndex].classList.add('node-active');
 
         jumps++;
-
         if (jumps < maxJumps) {
-            // Exponentially slow down the flashes as it gets closer to the end
             currentSpeed *= 1.12; 
             setTimeout(rngTick, currentSpeed);
         } else {
-            // SEQUENCE COMPLETE: Lock onto the final target
-            systemReset();
-            nodes[randomIndex].classList.add('node-active');
-            console.log(`[RNG PROTOCOL LOCKED]: Target acquired -> ${nodes[randomIndex].innerText}`);
-            
-            // Re-enable the button
-            btnRng.disabled = false;
+            // Sequence complete
+            modeBtns.forEach(b => b.disabled = false);
+            updateSystemState();
         }
     }
-    
-    // Initialize the sequence
     rngTick();
+});
+
+// 3. LOAD BALANCER (Split All)
+btnSplit.addEventListener('click', () => {
+    if (systemLocked) return;
+    setActiveMode(btnSplit);
+    
+    setTimeout(() => {
+        nodes.forEach(node => node.classList.add('node-active'));
+        updateSystemState();
+    }, 150);
+});
+
+// --- ACTION TRIGGERS ---
+
+// THE CONFIRM BUTTON
+btnConfirm.addEventListener('click', () => {
+    systemLocked = true; // Lock the system!
+    
+    // Visually lock the nodes
+    activeNodes.forEach(node => {
+        node.classList.remove('node-active');
+        node.classList.add('node-locked');
+    });
+
+    // Disable all mode buttons and the confirm button
+    modeBtns.forEach(btn => btn.disabled = true);
+    btnConfirm.disabled = true;
+    btnConfirm.innerText = "[ UPLINK LOCKED ]";
+
+    // Enable the Donate button
+    btnDonate.disabled = false;
+    btnDonate.classList.add('amber-glow'); // Give it a warning glow
+    
+    console.log("[SYSTEM LOCKED]: Ready for data transfer.");
+});
+
+// THE DONATE BUTTON
+btnDonate.addEventListener('click', () => {
+    btnDonate.innerText = "[ TRANSFERRING... ]";
+    
+    activeNodes.forEach(node => {
+        const charityName = node.innerText;
+        if(paymentGateways[charityName]) {
+            // Note: Browsers may block multiple popups if "Load Balancer" is used. 
+            // The user will need to allow popups for this site.
+            window.open(paymentGateways[charityName], '_blank');
+        }
+    });
+
+    // Optional: Reset the system after 3 seconds
+    setTimeout(() => {
+        location.reload(); // Reboots the terminal UI
+    }, 3000);
 });
