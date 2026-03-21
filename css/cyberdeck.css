@@ -59,6 +59,17 @@ body {
 }
 
 /* --- TYPOGRAPHY & GLOW --- */
+/* --- SYSTEM LOGO (SCALING PRE) --- */
+.terminal-logo {
+    font-family: 'Share Tech Mono', monospace; /* Force local font */
+    font-size: 1vw; /* Fluid size based on viewport width */
+    line-height: 1.1;
+    margin-bottom: 20px;
+    display: block;
+    border: none !important; /* Override panel borders if inherited */
+    background: transparent !important;
+}
+
 .phosphor-glow {
     text-shadow: 0 0 5px var(--color-phosphor), 0 0 10px rgba(0, 255, 65, 0.5);
     margin-bottom: 15px;
@@ -285,5 +296,11 @@ button:disabled {
     /* Shrink the headers slightly to fit narrow screens */
     .phosphor-glow {
         font-size: 1.3rem; 
+    }
+
+    /* Bump up the relative size so it's readable on phone */
+    .terminal-logo {
+        font-size: 2vw; 
+        margin-bottom: 10px;
     }
 }
