@@ -1,0 +1,111 @@
+/* --- SYSTEM VARIABLES --- */
+:root {
+    --bg-void: #050505;
+    --bg-panel: #111111;
+    --color-phosphor: #00FF41; /* Classic Terminal Green */
+    --color-amber: #FFB000;    /* High-contrast Warning Amber */
+    --scanline-color: rgba(0, 255, 65, 0.03);
+}
+
+/* --- HARDWARE RESET --- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--bg-void);
+    color: var(--color-phosphor);
+    font-family: 'Share Tech Mono', monospace;
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+/* --- CRT SCANLINE OVERLAY --- */
+.crt-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(
+        rgba(18, 16, 16, 0) 50%,
+        var(--scanline-color) 50%
+    );
+    background-size: 100% 4px;
+    pointer-events: none; /* Lets you click through the scanlines */
+    z-index: 999;
+}
+
+/* --- LAYOUT & PANELS --- */
+.terminal-container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    position: relative;
+    z-index: 10;
+}
+
+.node-panel {
+    border: 1px solid var(--color-phosphor);
+    background-color: var(--bg-panel);
+    padding: 20px;
+    box-shadow: inset 0 0 10px rgba(0, 255, 65, 0.1);
+}
+
+/* --- TYPOGRAPHY & GLOW --- */
+.phosphor-glow {
+    text-shadow: 0 0 5px var(--color-phosphor), 0 0 10px rgba(0, 255, 65, 0.5);
+    margin-bottom: 15px;
+    letter-spacing: 2px;
+}
+
+.amber-glow {
+    color: var(--color-amber);
+    text-shadow: 0 0 5px var(--color-amber), 0 0 10px rgba(255, 176, 0, 0.5);
+    margin-bottom: 15px;
+    letter-spacing: 2px;
+}
+
+ul {
+    list-style-type: square;
+    margin-left: 20px;
+}
+
+/* --- CHARITY GRID PLACEHOLDERS --- */
+.charity-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.charity-node {
+    border: 1px dashed var(--color-phosphor);
+    padding: 10px;
+    text-align: center;
+    opacity: 0.7;
+}
+
+/* --- MECHANICAL BUTTONS --- */
+.mechanical-btn {
+    background: transparent;
+    border: 2px solid var(--color-amber);
+    color: var(--color-amber);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1rem;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: all 0.1s ease-in-out;
+    margin-right: 10px;
+}
+
+.mechanical-btn:hover {
+    background: var(--color-amber);
+    color: var(--bg-void);
+    box-shadow: 0 0 15px var(--color-amber);
+}
