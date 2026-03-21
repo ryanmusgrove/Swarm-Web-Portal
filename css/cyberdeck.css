@@ -245,3 +245,45 @@ button:disabled {
     box-shadow: 0 0 15px rgba(255, 176, 0, 0.4) !important;
     animation: none !important; /* Stops any RNG flashing */
 }
+
+/* --- MOBILE OVERRIDES (RESPONSIVE PROTOCOL) --- */
+@media (max-width: 768px) {
+    /* Tighten up the main container to save screen real estate */
+    .terminal-container {
+        margin: 10px;
+        padding: 15px;
+    }
+
+    /* Stack the architecture specs into a single column */
+    .specs-grid {
+        grid-template-columns: 1fr; 
+    }
+
+    /* Stack the charity nodes so they are large, tappable targets */
+    .charity-grid {
+        grid-template-columns: 1fr; 
+    }
+
+    /* Stack all the mechanical buttons vertically */
+    .routing-modes {
+        flex-direction: column; 
+    }
+
+    .action-controls {
+        flex-direction: column; 
+    }
+
+    /* Make all buttons span the full width of the screen for easy thumb access */
+    .action-btn, .mechanical-btn {
+        width: 100%; 
+        text-align: center;
+        margin-right: 0;
+        margin-bottom: 10px;
+        padding: 15px;
+    }
+
+    /* Shrink the headers slightly to fit narrow screens */
+    .phosphor-glow {
+        font-size: 1.3rem; 
+    }
+}
