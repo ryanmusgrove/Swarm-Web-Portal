@@ -58,6 +58,19 @@ body {
     box-shadow: inset 0 0 10px rgba(0, 255, 65, 0.1);
 }
 
+#boot-sequence {
+    min-height: calc(60px + 6.6vw + 9.6rem);
+}
+
+#typing-text {
+    margin: 0;
+    white-space: nowrap;
+}
+
+#typing-text .amber-glow {
+    margin-bottom: 0;
+}
+
 /* --- TYPOGRAPHY & GLOW --- */
 /* --- SYSTEM LOGO (SCALING PRE) --- */
 .terminal-logo {
@@ -302,5 +315,9 @@ button:disabled {
     .terminal-logo {
         font-size: 2vw; 
         margin-bottom: 10px;
+    }
+
+    #boot-sequence {
+        min-height: calc(60px + 13.2vw + 9.6rem);
     }
 }
