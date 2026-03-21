@@ -3,7 +3,8 @@
     --bg-void: #050505;
     --bg-panel: #111111;
     --color-phosphor: #00FF41; /* Classic Terminal Green */
-    --color-amber: #FFB000;    /* High-contrast Warning Amber */
+    /*--color-amber: #FFB000;    /* High-contrast Warning Amber */
+    --color-amber: #00FFFF; /* Changed to Neon Cyan! */
     --scanline-color: rgba(0, 255, 65, 0.03);
 }
 
