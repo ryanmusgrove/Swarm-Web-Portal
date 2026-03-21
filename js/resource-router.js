@@ -6,7 +6,10 @@ const paymentGateways = {
     "Village Enterprise": "https://buy.stripe.com/your_link_3",
     "Peoples Consultants": "https://buy.stripe.com/your_link_4",
     "Colorectal Cancer Alliance": "https://buy.stripe.com/your_link_5",
-    "Crisis Aid International": "https://buy.stripe.com/your_link_6"
+    "Crisis Aid International": "https://buy.stripe.com/your_link_6",
+    "Upwardly Global": "https://buy.stripe.com/your_link_7",
+    "Legal Aid Foundation of Los Angeles": "https://buy.stripe.com/your_link_8",
+    "San Diego Humane Society": "https://buy.stripe.com/your_link_9"
 };
 
 // DOM Elements
@@ -112,24 +115,48 @@ btnSplit.addEventListener('click', () => {
 
 // THE CONFIRM BUTTON
 btnConfirm.addEventListener('click', () => {
-    systemLocked = true; // Lock the system!
-    
-    // Visually lock the nodes
-    activeNodes.forEach(node => {
-        node.classList.remove('node-active');
-        node.classList.add('node-locked');
-    });
+    if (!systemLocked) {
+        // Locking state
+        systemLocked = true;
 
-    // Disable all mode buttons and the confirm button
-    modeBtns.forEach(btn => btn.disabled = true);
-    btnConfirm.disabled = true;
-    btnConfirm.innerText = "[ UPLINK LOCKED ]";
+        // Visually lock the currently active nodes
+        activeNodes.forEach(node => {
+            node.classList.remove('node-active');
+            node.classList.add('node-locked');
+        });
 
-    // Enable the Donate button
-    btnDonate.disabled = false;
-    btnDonate.classList.add('amber-glow'); // Give it a warning glow
-    
-    console.log("[SYSTEM LOCKED]: Ready for data transfer.");
+        // Disable mode buttons, but keep confirm enabled so it can abort/unlock
+        modeBtns.forEach(btn => btn.disabled = true);
+        btnConfirm.disabled = false;
+        btnConfirm.innerText = "[ ABORT UPLINK ]";
+
+        // Enable the Donate button
+        btnDonate.disabled = false;
+        btnDonate.classList.add('amber-glow');
+
+        console.log("[SYSTEM LOCKED]: Ready for data transfer.");
+    } else {
+        // Unlocking state
+        systemLocked = false;
+
+        // Restore locked nodes back to active selection
+        document.querySelectorAll('.node-locked').forEach(node => {
+            node.classList.remove('node-locked');
+            node.classList.add('node-active');
+        });
+
+        // Re-enable controls and return labels/styles to default
+        modeBtns.forEach(btn => btn.disabled = false);
+        btnConfirm.innerText = "[ CONFIRM UPLINK ]";
+        btnDonate.disabled = true;
+        btnDonate.classList.remove('amber-glow');
+        btnDonate.innerText = "[ INITIATE TRANSFER ]";
+
+        // Recompute activeNodes now that system is unlocked
+        updateSystemState();
+
+        console.log("[SYSTEM UNLOCKED]: Uplink aborted by operator.");
+    }
 });
 
 // THE DONATE BUTTON
