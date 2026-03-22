@@ -26,6 +26,27 @@ const btnDonate      = document.getElementById('btn-donate');
 // --- STATE ---
 let routerLocked = false;
 let routerActiveNodes = [];
+let cancelRouterBoot = null;
+const routerTimeouts = new Set();
+
+function routerSetTimeout(fn, delay) {
+    const id = setTimeout(() => {
+        routerTimeouts.delete(id);
+        fn();
+    }, delay);
+    routerTimeouts.add(id);
+    return id;
+}
+
+function clearRouterTimeouts() {
+    routerTimeouts.forEach(clearTimeout);
+    routerTimeouts.clear();
+}
+
+function openExternalSafe(url) {
+    const newWindow = window.open(url, '_blank', 'noopener,noreferrer');
+    if (newWindow) newWindow.opener = null;
+}
 
 // --- BOOT LINES ---
 const routerBootLines = [
@@ -53,6 +74,7 @@ function resetRouterNodes() {
 
 function setRouterActiveMode(selectedBtn) {
     if (routerLocked) return;
+    clearRouterTimeouts();
     routerModeBtns.forEach(btn => btn.classList.remove('active-mode'));
     selectedBtn.classList.add('active-mode');
     resetRouterNodes();
@@ -88,7 +110,7 @@ btnRng.addEventListener('click', () => {
         jumps++;
         if (jumps < maxJumps) {
             currentSpeed *= 1.12;
-            setTimeout(rngTick, currentSpeed);
+            routerSetTimeout(rngTick, currentSpeed);
         } else {
             routerModeBtns.forEach(b => b.disabled = false);
             updateRouterState();
@@ -102,7 +124,7 @@ btnSplit.addEventListener('click', () => {
     if (routerLocked) return;
     setRouterActiveMode(btnSplit);
 
-    setTimeout(() => {
+    routerSetTimeout(() => {
         routerNodes.forEach(node => node.classList.add('node-active'));
         updateRouterState();
     }, 150);
@@ -152,11 +174,11 @@ btnDonate.addEventListener('click', () => {
     routerActiveNodes.forEach(node => {
         const charityName = node.innerText;
         if (paymentGateways[charityName]) {
-            window.open(paymentGateways[charityName], '_blank');
+            openExternalSafe(paymentGateways[charityName]);
         }
     });
 
-    setTimeout(() => {
+    routerSetTimeout(() => {
         // Reset state instead of full page reload
         routerLocked = false;
         document.querySelectorAll('.node-locked').forEach(node => {
@@ -182,15 +204,28 @@ function launchResourceRouter() {
     const textEl = document.getElementById('router-loading-text');
     const app = document.getElementById('router-app');
 
+    if (typeof rememberFocusForLayer === 'function') rememberFocusForLayer('layer-resource-router');
     layer.style.display = 'flex';
     app.style.display = 'none';
 
-    appBootAnimation(loading, textEl, routerBootLines, () => {
+    clearRouterTimeouts();
+    if (cancelRouterBoot) {
+        cancelRouterBoot();
+        cancelRouterBoot = null;
+    }
+
+    cancelRouterBoot = appBootAnimation(loading, textEl, routerBootLines, () => {
+        cancelRouterBoot = null;
         app.style.display = 'flex';
     });
 }
 
 function closeResourceRouter() {
+    clearRouterTimeouts();
+    if (cancelRouterBoot) {
+        cancelRouterBoot();
+        cancelRouterBoot = null;
+    }
     document.getElementById('layer-resource-router').style.display = 'none';
 
     // Reset state on close
@@ -208,4 +243,5 @@ function closeResourceRouter() {
     btnDonate.disabled = true;
     btnDonate.classList.remove('btn-glow');
     btnDonate.innerText = "[ INITIATE TRANSFER ]";
+    if (typeof restoreFocusForLayer === 'function') restoreFocusForLayer('layer-resource-router');
 }

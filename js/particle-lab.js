@@ -17,6 +17,9 @@ const S = {
 let particles = [];
 let pw = 100, ph = 100;
 let plabActive = false, plabAnimId = null;
+let cancelPlabBoot = null;
+const LIQUID_PAIR_SAMPLE_TARGET = 320;
+const PLEXUS_SAMPLE_TARGET = 320;
 
 const pmouse = { x: -1000, y: -1000, leftDown: false, rightDown: false, attractRadius: 150 };
 
@@ -74,7 +77,10 @@ class Particle {
             else if(d>Math.max(pw,ph)&&pull<0){let sa=rnd(0,Math.PI*2);this.x=cx+Math.cos(sa)*20;this.y=cy+Math.sin(sa)*20;}
         } else if (S.mode==='liquid') {
             this.vy+=S.gravity; this.x+=this.vx; this.y+=this.vy;
-            for(let i=0;i<particles.length;i++){
+            const neighborStep = particles.length > LIQUID_PAIR_SAMPLE_TARGET
+                ? Math.ceil(particles.length / LIQUID_PAIR_SAMPLE_TARGET)
+                : 1;
+            for(let i=0;i<particles.length;i+=neighborStep){
                 let p2=particles[i]; if(p2===this)continue;
                 let dx=p2.x-this.x,dy=p2.y-this.y,d=Math.sqrt(dx*dx+dy*dy),th=S.size*4;
                 if(d<th&&d>0){
@@ -121,8 +127,11 @@ function plabAnimate() {
     for(let i=0;i<particles.length;i++){particles[i].update();particles[i].draw();}
     if(S.mode==='plexus'){
         let rgb=hex2rgb(S.color),mx=120;
-        for(let i=0;i<particles.length;i++){
-            for(let j=i+1;j<particles.length;j++){
+        const pairStep = particles.length > PLEXUS_SAMPLE_TARGET
+            ? Math.ceil(particles.length / PLEXUS_SAMPLE_TARGET)
+            : 1;
+        for(let i=0;i<particles.length;i+=pairStep){
+            for(let j=i+pairStep;j<particles.length;j+=pairStep){
                 let dx=particles[i].x-particles[j].x,dy=particles[i].y-particles[j].y,d=Math.sqrt(dx*dx+dy*dy);
                 if(d<mx){ctx.beginPath();ctx.strokeStyle=`rgba(${rgb.r},${rgb.g},${rgb.b},${1-d/mx})`;ctx.lineWidth=1;ctx.moveTo(particles[i].x,particles[i].y);ctx.lineTo(particles[j].x,particles[j].y);ctx.stroke();}
             }
@@ -244,10 +253,17 @@ const plabBootLines = [
 ];
 
 function launchParticleLab() {
+    if (typeof rememberFocusForLayer === 'function') rememberFocusForLayer('layer-particle-lab');
     layerPLab.style.display = 'flex';
     plabAppEl.style.display = 'none';
 
-    appBootAnimation(plabLoadingEl, plabLoadingText, plabBootLines, () => {
+    if (cancelPlabBoot) {
+        cancelPlabBoot();
+        cancelPlabBoot = null;
+    }
+
+    cancelPlabBoot = appBootAnimation(plabLoadingEl, plabLoadingText, plabBootLines, () => {
+        cancelPlabBoot = null;
         plabAppEl.style.display = 'flex';
         plabActive = true;
         requestAnimationFrame(() => {
@@ -259,11 +275,16 @@ function launchParticleLab() {
 }
 
 function closeParticleLab() {
+    if (cancelPlabBoot) {
+        cancelPlabBoot();
+        cancelPlabBoot = null;
+    }
     plabActive = false;
     if (plabAnimId) cancelAnimationFrame(plabAnimId);
     plabAnimId = null;
     layerPLab.style.display = 'none';
     canvas.classList.remove('gooey-effect');
+    if (typeof restoreFocusForLayer === 'function') restoreFocusForLayer('layer-particle-lab');
 }
 
 function togglePlabControls() {
@@ -271,3 +292,13 @@ function togglePlabControls() {
 }
 
 window.addEventListener('resize', () => { if (plabActive) plabResize(); });
+
+document.addEventListener('visibilitychange', () => {
+    if (!plabActive) return;
+    if (document.hidden) {
+        if (plabAnimId) cancelAnimationFrame(plabAnimId);
+        plabAnimId = null;
+        return;
+    }
+    if (!plabAnimId) plabAnimate();
+});

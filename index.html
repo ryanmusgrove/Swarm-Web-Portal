@@ -73,30 +73,30 @@
         <div class="mb-4 flex-shrink-0">
             <div class="text-xs text-theme opacity-40 mb-2 uppercase tracking-widest">&#9656; Applications</div>
             <div class="grid grid-cols-3 md:grid-cols-6 gap-3">
-                <div class="app-tile" onclick="launchParticleLab()">
+                <button type="button" class="app-tile" data-app-action="particle-lab" aria-label="Launch Particle Lab">
                     <div class="app-tile-icon">&#9883;</div>
                     <div class="text-xs text-theme">PARTICLE<br>LAB</div>
-                </div>
-                <div class="app-tile" onclick="showPlaceholder('NET_SCAN')">
+                </button>
+                <button type="button" class="app-tile" data-app-action="net-scan" aria-label="Open Net Scan placeholder">
                     <div class="app-tile-icon">&#128225;</div>
                     <div class="text-xs text-theme">NET<br>SCAN</div>
-                </div>
-                <div class="app-tile" onclick="showPlaceholder('CRYPT_VAULT')">
+                </button>
+                <button type="button" class="app-tile" data-app-action="crypt-vault" aria-label="Open Crypt Vault placeholder">
                     <div class="app-tile-icon">&#128272;</div>
                     <div class="text-xs text-theme">CRYPT<br>VAULT</div>
-                </div>
-                <div class="app-tile" onclick="launchSysMon()">
+                </button>
+                <button type="button" class="app-tile" data-app-action="sysmon" aria-label="Launch System Monitor">
                     <div class="app-tile-icon">&#128202;</div>
                     <div class="text-xs text-theme">SYS<br>MON</div>
-                </div>
-                <div class="app-tile" onclick="showPlaceholder('JACK_IN')">
+                </button>
+                <button type="button" class="app-tile" data-app-action="jack-in" aria-label="Open Jack In placeholder">
                     <div class="app-tile-icon">&#128268;</div>
                     <div class="text-xs text-theme">JACK<br>IN</div>
-                </div>
-                <div class="app-tile" onclick="launchResourceRouter()">
+                </button>
+                <button type="button" class="app-tile" data-app-action="resource-router" aria-label="Launch Resource Router">
                     <div class="app-tile-icon">&#127760;</div>
                     <div class="text-xs text-theme">RESOURCE<br>ROUTER</div>
-                </div>
+                </button>
             </div>
         </div>
 
@@ -170,7 +170,7 @@
                     <div class="plab-section-title">Particles</div>
                     <div class="plab-cg">
                         <label>Amount <span id="val-amount" class="plab-val">150</span></label>
-                        <input type="range" id="ctrl-amount" min="10" max="1000" value="150">
+                        <input type="range" id="ctrl-amount" min="10" max="600" value="150">
                     </div>
                     <div class="plab-cg">
                         <label>Size <span id="val-size" class="plab-val">3</span></label>
@@ -376,9 +376,9 @@
     </div>
     <div class="switch-container">
         <div class="text-xs text-zinc-400 font-bold">PWR</div>
-        <div id="power-switch" class="switch" onclick="togglePower()">
+        <button type="button" id="power-switch" class="switch" aria-label="Toggle system power" aria-pressed="false">
             <div class="switch-toggle"></div>
-        </div>
+        </button>
     </div>
 </div>
 

@@ -26,6 +26,159 @@ const swarmContainer = document.getElementById('swarm-container');
 const miniDisplay    = document.getElementById('mini-display');
 const powerSwitch    = document.getElementById('power-switch');
 const asciiLogo      = document.getElementById('ascii-logo');
+const overlayFocusMemory = new Map();
+
+function handleAppTileAction(action) {
+    if (action === 'particle-lab') launchParticleLab();
+    else if (action === 'sysmon') launchSysMon();
+    else if (action === 'resource-router') launchResourceRouter();
+    else if (action === 'net-scan') showPlaceholder('NET_SCAN');
+    else if (action === 'crypt-vault') showPlaceholder('CRYPT_VAULT');
+    else if (action === 'jack-in') showPlaceholder('JACK_IN');
+}
+
+function bindCoreInteractions() {
+    if (powerSwitch) {
+        powerSwitch.addEventListener('click', togglePower);
+    }
+    if (layerOs) {
+        layerOs.addEventListener('click', (event) => {
+            const appTile = event.target.closest('[data-app-action]');
+            if (!appTile) return;
+            handleAppTileAction(appTile.dataset.appAction);
+        });
+    }
+    document.addEventListener('keydown', handleGlobalKeydown);
+}
+
+function rememberFocusForLayer(layerId) {
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && active !== document.body) {
+        overlayFocusMemory.set(layerId, active);
+    } else {
+        overlayFocusMemory.delete(layerId);
+    }
+}
+
+function canReceiveFocus(el) {
+    if (!(el instanceof HTMLElement)) return false;
+    if (!document.contains(el)) return false;
+    if (el.hasAttribute('disabled')) return false;
+    if (el.hasAttribute('hidden')) return false;
+    const style = window.getComputedStyle(el);
+    if (style.display === 'none' || style.visibility === 'hidden') return false;
+    return el.getClientRects().length > 0;
+}
+
+function restoreFocusForLayer(layerId) {
+    const target = overlayFocusMemory.get(layerId);
+    overlayFocusMemory.delete(layerId);
+    if (!canReceiveFocus(target)) return;
+    target.focus({ preventScroll: true });
+}
+
+function isLayerVisible(id) {
+    const el = document.getElementById(id);
+    if (!el) return false;
+    return window.getComputedStyle(el).display !== 'none';
+}
+
+function getActiveOverlayLayer() {
+    const overlayOrder = [
+        'layer-placeholder',
+        'layer-resource-router',
+        'layer-sysmon',
+        'layer-particle-lab'
+    ];
+    for (const id of overlayOrder) {
+        if (isLayerVisible(id)) return document.getElementById(id);
+    }
+    return null;
+}
+
+function getFocusableElements(container) {
+    const selector = [
+        'a[href]',
+        'area[href]',
+        'button:not([disabled])',
+        'input:not([disabled]):not([type="hidden"])',
+        'select:not([disabled])',
+        'textarea:not([disabled])',
+        '[tabindex]:not([tabindex="-1"])'
+    ].join(',');
+
+    return Array.from(container.querySelectorAll(selector)).filter((el) => {
+        if (el.hasAttribute('hidden')) return false;
+        const style = window.getComputedStyle(el);
+        if (style.display === 'none' || style.visibility === 'hidden') return false;
+        return el.getClientRects().length > 0;
+    });
+}
+
+function trapFocusInActiveOverlay(event) {
+    if (event.key !== 'Tab') return false;
+
+    const layer = getActiveOverlayLayer();
+    if (!layer) return false;
+
+    const focusables = getFocusableElements(layer);
+    if (focusables.length === 0) {
+        if (!layer.hasAttribute('tabindex')) layer.setAttribute('tabindex', '-1');
+        layer.focus();
+        event.preventDefault();
+        return true;
+    }
+
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const active = document.activeElement;
+
+    if (!layer.contains(active)) {
+        first.focus();
+        event.preventDefault();
+        return true;
+    }
+
+    if (!event.shiftKey && active === last) {
+        first.focus();
+        event.preventDefault();
+        return true;
+    }
+
+    if (event.shiftKey && active === first) {
+        last.focus();
+        event.preventDefault();
+        return true;
+    }
+
+    return false;
+}
+
+function handleGlobalKeydown(event) {
+    if (trapFocusInActiveOverlay(event)) return;
+    if (event.key !== 'Escape') return;
+
+    // Close highest z-index overlay/app first.
+    if (isLayerVisible('layer-placeholder')) {
+        closePlaceholder();
+        event.preventDefault();
+        return;
+    }
+    if (isLayerVisible('layer-resource-router') && typeof closeResourceRouter === 'function') {
+        closeResourceRouter();
+        event.preventDefault();
+        return;
+    }
+    if (isLayerVisible('layer-sysmon')) {
+        closeSysMon();
+        event.preventDefault();
+        return;
+    }
+    if (isLayerVisible('layer-particle-lab') && typeof closeParticleLab === 'function') {
+        closeParticleLab();
+        event.preventDefault();
+    }
+}
 
 const bootText = [
     "BIOS Date 04/12/2077 14:32:01 Ver 7.0.4",
@@ -82,6 +235,7 @@ function changeProtocol(proto) {
 // --- POWER ---
 function togglePower() {
     isPowerOn = !isPowerOn;
+    if (powerSwitch) powerSwitch.setAttribute('aria-pressed', isPowerOn ? 'true' : 'false');
     if (isPowerOn) {
         powerSwitch.classList.add('on');
         startBootSequence();
@@ -97,6 +251,7 @@ function togglePower() {
 
 function turnOff() {
     clearAllTimeouts(); osIsActive = false;
+    if (powerSwitch) powerSwitch.setAttribute('aria-pressed', 'false');
     layerOff.style.display = 'flex';
     layerTerminal.style.display = 'none';
     layerSwarm.style.display = 'none';
@@ -225,6 +380,7 @@ setInterval(() => {
 
 // --- SYS MON HARDWARE SIMULATION ---
 let sysmonInterval = null;
+let cancelSysMonBoot = null;
 
 function startSysMonSimulation() {
     sysmonInterval = setInterval(() => {
@@ -255,12 +411,22 @@ function stopSysMonSimulation() {
 
 // --- APP BOOT ANIMATION (shared helper) ---
 function appBootAnimation(loadingEl, textEl, lines, onComplete) {
+    let cancelled = false;
+    const localTimeouts = [];
+    const localSetTimeout = (fn, delay) => {
+        const id = setTimeout(() => {
+            if (!cancelled) fn();
+        }, delay);
+        localTimeouts.push(id);
+        return id;
+    };
+
     loadingEl.style.display = 'flex';
     textEl.innerHTML = '';
 
     let delay = 150;
     lines.forEach((line, idx) => {
-        setTimeout(() => {
+        localSetTimeout(() => {
             const div = document.createElement('div');
             div.textContent = line;
             div.classList.add('visible');
@@ -274,10 +440,17 @@ function appBootAnimation(loadingEl, textEl, lines, onComplete) {
         delay += 250;
     });
 
-    setTimeout(() => {
+    localSetTimeout(() => {
         loadingEl.style.display = 'none';
         onComplete();
     }, delay + 600);
+
+    return () => {
+        cancelled = true;
+        localTimeouts.forEach(clearTimeout);
+        localTimeouts.length = 0;
+        loadingEl.style.display = 'none';
+    };
 }
 
 // --- SYS MON APP ---
@@ -294,10 +467,17 @@ function launchSysMon() {
     const textEl = document.getElementById('sysmon-loading-text');
     const app = document.getElementById('sysmon-app');
 
+    rememberFocusForLayer('layer-sysmon');
     layer.style.display = 'flex';
     app.style.display = 'none';
 
-    appBootAnimation(loading, textEl, sysmonBootLines, () => {
+    if (cancelSysMonBoot) {
+        cancelSysMonBoot();
+        cancelSysMonBoot = null;
+    }
+
+    cancelSysMonBoot = appBootAnimation(loading, textEl, sysmonBootLines, () => {
+        cancelSysMonBoot = null;
         app.style.display = 'flex';
         changeProtocol(currentProtocol);
         startSysMonSimulation();
@@ -305,15 +485,27 @@ function launchSysMon() {
 }
 
 function closeSysMon() {
+    if (cancelSysMonBoot) {
+        cancelSysMonBoot();
+        cancelSysMonBoot = null;
+    }
     document.getElementById('layer-sysmon').style.display = 'none';
     stopSysMonSimulation();
+    restoreFocusForLayer('layer-sysmon');
 }
 
 // --- PLACEHOLDER APP ---
 function showPlaceholder(name) {
+    rememberFocusForLayer('layer-placeholder');
     document.getElementById('placeholder-name').textContent = name;
     document.getElementById('layer-placeholder').style.display = 'block';
 }
 function closePlaceholder() {
     document.getElementById('layer-placeholder').style.display = 'none';
+    restoreFocusForLayer('layer-placeholder');
 }
+
+bindCoreInteractions();
+
+window.rememberFocusForLayer = rememberFocusForLayer;
+window.restoreFocusForLayer = restoreFocusForLayer;

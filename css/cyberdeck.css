@@ -32,6 +32,16 @@ body {
 .bg-theme { background-color: var(--primary); transition: background-color 0.3s ease; }
 .bg-theme-dim { background-color: var(--primary-dim); transition: background-color 0.3s ease; }
 
+/* --- KEYBOARD FOCUS --- */
+button:focus-visible,
+select:focus-visible,
+input[type="range"]:focus-visible,
+input[type="color"]:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.85), 0 0 10px var(--primary-dim);
+}
+
 /* --- ASCII LOGO --- */
 .ascii-logo {
     font-family: 'Share Tech Mono', monospace;
@@ -102,6 +112,8 @@ body {
     position: relative; width: 60px; height: 60px;
     background: #111; border-radius: 8px; border: 2px solid #000;
     box-shadow: inset 0 0 10px rgba(0,0,0,1); cursor: pointer;
+    appearance: none; -webkit-appearance: none;
+    padding: 0;
 }
 .switch-toggle {
     position: absolute; width: 100%; height: 50%;
@@ -208,6 +220,8 @@ body {
     display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
     cursor: pointer; transition: all 0.2s; border-radius: 4px; text-align: center;
     user-select: none;
+    appearance: none; -webkit-appearance: none;
+    font: inherit; color: inherit;
 }
 .app-tile:hover {
     background: var(--primary-dim);
@@ -266,10 +280,11 @@ body {
 .plab-val { opacity: 1; font-weight: bold; }
 
 .plab-controls input[type="range"] {
-    -webkit-appearance: none; width: 100%; background: transparent; margin: 3px 0;
+    appearance: none; -webkit-appearance: none; width: 100%; background: transparent; margin: 3px 0;
 }
 .plab-controls input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none; height: 12px; width: 12px;
+    appearance: none;
     background: var(--primary); cursor: pointer; margin-top: -4px; border-radius: 0;
 }
 .plab-controls input[type="range"]::-webkit-slider-runnable-track {
