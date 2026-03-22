@@ -1,323 +1,473 @@
+/* ==========================================
+   CYBERDECK OS - SYSTEM STYLESHEET
+   ========================================== */
+
 /* --- SYSTEM VARIABLES --- */
 :root {
-    --bg-void: #050505;
-    --bg-panel: #111111;
-    --color-phosphor: #00FF41; /* Classic Terminal Green */
-    /*--color-amber: #FFB000;    /* High-contrast Warning Amber */
-    --color-amber: #00FFFF; /* Changed to Neon Cyan! */
-    --scanline-color: rgba(0, 255, 65, 0.03);
+    --primary: #fbbf24;
+    --primary-dim: rgba(251, 191, 36, 0.2);
+    --primary-border: #b45309;
 }
 
 /* --- HARDWARE RESET --- */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
 body {
-    background-color: var(--bg-void);
-    color: var(--color-phosphor);
+    background-color: #050505;
+    color: var(--primary);
     font-family: 'Share Tech Mono', monospace;
-    line-height: 1.6;
-    overflow-x: hidden;
-}
-
-/* --- CRT SCANLINE OVERLAY --- */
-.crt-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
+    margin: 0;
     height: 100vh;
-    background: linear-gradient(
-        rgba(18, 16, 16, 0) 50%,
-        var(--scanline-color) 50%
-    );
-    background-size: 100% 4px;
-    pointer-events: none; /* Lets you click through the scanlines */
-    z-index: 999;
-}
-
-/* --- LAYOUT & PANELS --- */
-.terminal-container {
-    max-width: 900px;
-    margin: 40px auto;
-    padding: 20px;
     display: flex;
     flex-direction: column;
-    gap: 30px;
-    position: relative;
-    z-index: 10;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 1rem;
+    box-sizing: border-box;
+    transition: color 0.3s ease;
 }
 
-.node-panel {
-    border: 1px solid var(--color-phosphor);
-    background-color: var(--bg-panel);
-    padding: 20px;
-    box-shadow: inset 0 0 10px rgba(0, 255, 65, 0.1);
-}
+/* --- THEME UTILITY CLASSES --- */
+.text-theme { color: var(--primary); transition: color 0.3s ease; }
+.border-theme { border-color: var(--primary-border); transition: border-color 0.3s ease; }
+.bg-theme { background-color: var(--primary); transition: background-color 0.3s ease; }
+.bg-theme-dim { background-color: var(--primary-dim); transition: background-color 0.3s ease; }
 
-#boot-sequence {
-    min-height: calc(60px + 6.6vw + 9.6rem);
-}
-
-#typing-text {
-    margin: 0;
-    white-space: nowrap;
-}
-
-#typing-text .amber-glow {
-    margin-bottom: 0;
-}
-
-/* --- TYPOGRAPHY & GLOW --- */
-/* --- SYSTEM LOGO (SCALING PRE) --- */
-.terminal-logo {
-    font-family: 'Share Tech Mono', monospace; /* Force local font */
-    font-size: 1vw; /* Fluid size based on viewport width */
+/* --- ASCII LOGO --- */
+.ascii-logo {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: clamp(0.4rem, 1vw, 0.75rem);
     line-height: 1.1;
-    margin-bottom: 20px;
-    display: block;
-    border: none !important; /* Override panel borders if inherited */
-    background: transparent !important;
+    margin-bottom: 10px;
 }
 
-.phosphor-glow {
-    text-shadow: 0 0 5px var(--color-phosphor), 0 0 10px rgba(0, 255, 65, 0.5);
-    margin-bottom: 15px;
-    letter-spacing: 2px;
+/* --- SCREEN CONTAINER --- */
+.screen-container {
+    position: relative;
+    width: 100%;
+    max-width: 1000px;
+    flex-grow: 1;
+    max-height: 70vh;
+    background-color: #000;
+    border: 8px solid #1a1a1a;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 0 20px rgba(0,0,0,0.8), inset 0 0 15px var(--primary-dim);
+    transition: box-shadow 0.3s ease;
+    z-index: 20;
 }
 
-.amber-glow {
-    color: var(--color-amber);
-    text-shadow: 0 0 5px var(--color-amber), 0 0 10px rgba(255, 176, 0, 0.5);
-    margin-bottom: 15px;
-    letter-spacing: 2px;
+/* --- CRT SCANLINES --- */
+.scanlines {
+    position: absolute; inset: 0;
+    background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.25) 50%), linear-gradient(90deg, rgba(255,0,0,0.06), rgba(0,255,0,0.02), rgba(0,0,255,0.06));
+    background-size: 100% 4px, 3px 100%;
+    pointer-events: none;
+    z-index: 100;
 }
 
-ul {
-    list-style-type: square;
-    margin-left: 20px;
+/* --- MINI DISPLAY --- */
+.mini-display-container {
+    width: 100%; max-width: 1020px; height: 24px;
+    background-color: #0a0a0a;
+    border-left: 4px solid #1a1a1a; border-right: 4px solid #1a1a1a; border-top: 4px solid #1a1a1a;
+    border-radius: 8px 8px 0 0; margin-top: 10px;
+    position: relative; overflow: hidden;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+    z-index: 15; opacity: 0; transition: opacity 0.5s ease;
+}
+.mini-display-container.active { opacity: 1; }
+
+/* --- DECK CONSOLE --- */
+.deck-console {
+    width: 100%; max-width: 1050px; height: 100px;
+    background: linear-gradient(to bottom, #2a2a2a, #111);
+    border-top: 2px solid #333; border-radius: 0 0 16px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+    position: relative; z-index: 10;
 }
 
-/* --- CHARITY GRID PLACEHOLDERS --- */
+.deck-select {
+    background: #111; color: var(--primary);
+    border: 2px solid #333; padding: 4px 8px; border-radius: 4px;
+    font-family: 'Share Tech Mono', monospace; font-size: 0.8rem;
+    outline: none; cursor: pointer; transition: all 0.3s ease;
+}
+.deck-select:focus { border-color: var(--primary); }
+
+/* --- POWER SWITCH --- */
+.switch-container { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.switch {
+    position: relative; width: 60px; height: 60px;
+    background: #111; border-radius: 8px; border: 2px solid #000;
+    box-shadow: inset 0 0 10px rgba(0,0,0,1); cursor: pointer;
+}
+.switch-toggle {
+    position: absolute; width: 100%; height: 50%;
+    background: #444; border-radius: 6px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    bottom: 0;
+    box-shadow: inset 0 2px 5px rgba(255,255,255,0.2), 0 -2px 5px rgba(0,0,0,0.5);
+}
+#power-switch .switch-toggle { background: #dc2626; }
+.switch.on .switch-toggle { bottom: 50%; }
+#power-switch.on .switch-toggle {
+    background: var(--primary);
+    box-shadow: inset 0 -2px 5px rgba(255,255,255,0.2), 0 2px 5px rgba(0,0,0,0.5), 0 0 15px var(--primary-dim);
+}
+
+/* --- ANIMATIONS --- */
+@keyframes rise {
+    0% { transform: translateY(100%) scaleY(0.5); opacity: 0; }
+    20% { opacity: 1; } 80% { opacity: 0.8; }
+    100% { transform: translateY(-150%) scaleY(1.5); opacity: 0; }
+}
+.flame-shard {
+    position: absolute; bottom: 0;
+    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+    transform-origin: bottom; animation: rise linear infinite;
+}
+
+@keyframes fly { 0% { left: -10%; } 100% { left: 110%; } }
+@keyframes flutter { 0% { transform: translateY(-15px) rotate(-10deg); } 100% { transform: translateY(15px) rotate(10deg); } }
+@keyframes flutter-mini { 0% { transform: translateY(-3px) rotate(-10deg); } 100% { transform: translateY(3px) rotate(10deg); } }
+
+@keyframes sentinel-pulse {
+    0%, 100% { opacity: 0.2; }
+    50% { opacity: 1; }
+}
+
+@keyframes ghost-drift {
+    0% { transform: translateX(-100%); opacity: 0; }
+    10% { opacity: 0.15; }
+    90% { opacity: 0.15; }
+    100% { transform: translateX(200%); opacity: 0; }
+}
+
+@keyframes load { 0% { width: 0%; } 100% { width: 100%; } }
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+@keyframes plabBarLoad { 0% { width: 0; } 100% { width: 100%; } }
+
+.animate-load { animation: load 2.5s ease-in-out forwards; }
+
+/* --- BEE ELEMENTS --- */
+.bee {
+    position: absolute; width: 12px; height: 8px;
+    background-color: #fbbf24; border-radius: 50%;
+    background-image: repeating-linear-gradient(90deg, transparent, transparent 3px, #000 3px, #000 6px);
+    box-shadow: 0 0 5px rgba(251,191,36,0.5);
+    animation-name: fly, flutter;
+    animation-timing-function: linear, ease-in-out;
+    animation-iteration-count: infinite, infinite;
+    animation-direction: normal, alternate;
+}
+.bee-mini {
+    position: absolute; width: 6px; height: 4px;
+    background-color: #fbbf24; border-radius: 50%;
+    background-image: repeating-linear-gradient(90deg, transparent, transparent 2px, #000 2px, #000 4px);
+    box-shadow: 0 0 3px rgba(251,191,36,0.8);
+    animation-name: fly, flutter-mini;
+    animation-timing-function: linear, ease-in-out;
+    animation-iteration-count: infinite, infinite;
+    animation-direction: normal, alternate;
+}
+
+/* --- MINI DISPLAY ELEMENTS --- */
+.sentinel-dot {
+    position: absolute;
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--primary);
+    animation: sentinel-pulse ease-in-out infinite;
+}
+
+.ghost-bar {
+    position: absolute;
+    height: 2px;
+    background: var(--primary);
+    opacity: 0.15;
+    animation: ghost-drift linear infinite;
+}
+
+/* --- PROTOCOL STATUS --- */
+.status-standby { color: #71717a; font-weight: bold; }
+.status-iceburn { color: #ef4444; font-weight: bold; }
+.status-iceburn-pulse { color: #ef4444; font-weight: bold; animation: pulse 2s infinite; }
+.status-sentinel { color: #3b82f6; font-weight: bold; }
+.status-ghost { color: #a855f7; font-weight: bold; }
+
+/* --- APP TILES --- */
+.app-tile {
+    border: 1px solid var(--primary-border);
+    background: rgba(0,0,0,0.5);
+    padding: 0.75rem 0.5rem;
+    display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+    cursor: pointer; transition: all 0.2s; border-radius: 4px; text-align: center;
+    user-select: none;
+}
+.app-tile:hover {
+    background: var(--primary-dim);
+    border-color: var(--primary);
+    transform: scale(1.05);
+    box-shadow: 0 0 12px var(--primary-dim);
+}
+.app-tile:active { transform: scale(0.97); }
+.app-tile-icon {
+    width: 40px; height: 40px;
+    border: 1px solid var(--primary-border);
+    background: rgba(0,0,0,0.6);
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 6px; font-size: 1.3rem;
+}
+
+/* --- PARTICLE LAB --- */
+.plab-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 5px 10px;
+    background: rgba(0,0,0,0.95);
+    border-bottom: 1px solid var(--primary-border);
+    flex-shrink: 0; z-index: 5;
+}
+.plab-topbar-btn {
+    font-family: 'Share Tech Mono', monospace;
+    background: none; border: 1px solid var(--primary-border);
+    color: var(--primary); padding: 3px 12px; font-size: 0.8rem;
+    cursor: pointer; transition: all 0.2s; border-radius: 2px;
+}
+.plab-topbar-btn:hover { background: var(--primary); color: #000; }
+
+.plab-body { flex-grow: 1; position: relative; overflow: hidden; }
+.plab-canvas-wrap { position: absolute; inset: 0; background: #000; }
+.plab-canvas-wrap canvas { display: block; width: 100%; height: 100%; }
+
+.plab-controls {
+    position: absolute; top: 0; right: 0; bottom: 0; width: 240px;
+    background: rgba(5,5,10,0.93);
+    border-left: 1px solid var(--primary-border);
+    overflow-y: auto; padding: 10px;
+    display: flex; flex-direction: column; gap: 8px;
+    z-index: 10; transition: transform 0.3s ease;
+    backdrop-filter: blur(5px);
+}
+.plab-controls.collapsed { transform: translateX(100%); }
+.plab-controls::-webkit-scrollbar { width: 4px; }
+.plab-controls::-webkit-scrollbar-thumb { background: var(--primary-border); }
+
+.plab-cg { display: flex; flex-direction: column; gap: 2px; }
+.plab-cg label {
+    color: var(--primary); font-size: 0.7rem;
+    text-transform: uppercase; display: flex; justify-content: space-between;
+    opacity: 0.85;
+}
+.plab-val { opacity: 1; font-weight: bold; }
+
+.plab-controls input[type="range"] {
+    -webkit-appearance: none; width: 100%; background: transparent; margin: 3px 0;
+}
+.plab-controls input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; height: 12px; width: 12px;
+    background: var(--primary); cursor: pointer; margin-top: -4px; border-radius: 0;
+}
+.plab-controls input[type="range"]::-webkit-slider-runnable-track {
+    width: 100%; height: 4px; cursor: pointer; background: #333;
+}
+.plab-controls select, .plab-controls input[type="color"] {
+    font-family: 'Share Tech Mono', monospace;
+    background: #000; color: var(--primary);
+    border: 1px solid #333; padding: 3px; font-size: 0.75rem;
+    cursor: pointer; outline: none; width: 100%;
+}
+
+.plab-btn {
+    font-family: 'Share Tech Mono', monospace;
+    background: rgba(0,0,0,0.8); color: var(--primary);
+    border: 1px solid var(--primary-border);
+    padding: 5px 6px; font-size: 0.75rem;
+    cursor: pointer; text-transform: uppercase;
+    transition: all 0.2s; text-align: center; border-radius: 2px;
+}
+.plab-btn:hover { background: var(--primary); color: #000; }
+.plab-btn.active { background: var(--primary-dim); border-color: var(--primary); }
+
+.plab-mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.plab-section-title {
+    font-size: 0.65rem; text-transform: uppercase;
+    color: var(--primary); opacity: 0.4;
+    border-bottom: 1px dashed #333; padding-bottom: 3px; margin-top: 2px;
+}
+
+.gooey-effect { filter: blur(8px) contrast(25); }
+
+.plab-loading-screen {
+    position: absolute; inset: 0;
+    background: #000;
+    display: flex; flex-direction: column;
+    justify-content: center; padding: 2rem;
+    z-index: 20;
+}
+.plab-loading-screen div {
+    font-size: 0.85rem;
+    color: var(--primary);
+    margin-bottom: 4px;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+.plab-loading-screen div.visible { opacity: 1; }
+
+.plab-load-bar {
+    height: 3px; background: var(--primary); margin-top: 12px;
+    animation: plabBarLoad 1.5s ease-in-out forwards;
+}
+
+/* --- RESOURCE ROUTER --- */
 .charity-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin: 20px 0;
+    gap: 8px;
+    margin-bottom: 16px;
 }
 
 .charity-node {
-    border: 1px dashed var(--color-phosphor);
+    border: 1px dashed var(--primary-border);
     padding: 10px;
     text-align: center;
-    opacity: 0.7;
-}
-
-.node-active {
-    opacity: 1 !important;
-    border: 1px solid var(--color-amber) !important;
-    color: var(--color-amber);
-    box-shadow: inset 0 0 15px rgba(255, 176, 0, 0.2), 0 0 10px rgba(255, 176, 0, 0.4);
-    font-weight: bold;
-    transition: all 0.1s ease-out;
-}
-
-/* --- MECHANICAL BUTTONS --- */
-.mechanical-btn {
-    background: transparent;
-    border: 2px solid var(--color-amber);
-    color: var(--color-amber);
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 1rem;
-    padding: 10px 20px;
+    font-size: 0.75rem;
+    color: var(--primary);
+    opacity: 0.6;
     cursor: pointer;
-    transition: all 0.1s ease-in-out;
-    margin-right: 10px;
+    transition: all 0.15s ease-out;
+    user-select: none;
 }
 
-.mechanical-btn:hover {
-    background: var(--color-amber);
-    color: var(--bg-void);
-    box-shadow: 0 0 15px var(--color-amber);
-}
-
-/* --- TERMINAL CURSOR --- */
-.blinking-cursor {
+.charity-node.node-active {
+    opacity: 1;
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    box-shadow: inset 0 0 15px var(--primary-dim), 0 0 10px var(--primary-dim);
     font-weight: bold;
-    color: var(--color-phosphor);
-    animation: blink 1s step-end infinite;
+    background: var(--primary-dim);
 }
 
-@keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
-}
-
-/* --- DATACORE & SPECS --- */
-.specs-grid {
-    display: grid;
-    /* This auto-fit magic makes it responsive automatically! */
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 20px;
-    margin-top: 20px;
-}
-
-.spec-block {
-    border: 1px solid rgba(0, 255, 65, 0.3);
-    background: rgba(0, 255, 65, 0.05);
-    padding: 15px;
-    transition: border 0.2s ease;
-}
-
-.spec-block:hover {
-    border-color: var(--color-phosphor);
-    box-shadow: inset 0 0 10px rgba(0, 255, 65, 0.1);
-}
-
-.spec-block h3 {
-    font-size: 1.1rem;
-    margin-bottom: 10px;
-    border-bottom: 1px dashed var(--color-amber);
-    display: inline-block;
-}
-
-/* --- DEPLOYMENT TARGETS --- */
-.targets-list {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    margin-top: 20px;
-}
-
-.target-item {
-    display: flex;
-    gap: 15px;
-    padding: 10px 15px;
-    border-left: 3px solid var(--color-phosphor);
-    background: linear-gradient(90deg, rgba(0, 255, 65, 0.1) 0%, transparent 100%);
-}
-
-.target-id {
-    color: var(--color-amber);
+.charity-node.node-locked {
+    opacity: 1;
+    border: 2px solid var(--primary);
+    color: var(--primary);
+    box-shadow: 0 0 15px var(--primary-dim);
     font-weight: bold;
-    white-space: nowrap;
+    background: var(--primary-dim);
+    animation: none;
 }
 
-.target-desc h4 {
-    color: var(--color-phosphor);
-    margin-bottom: 5px;
-    letter-spacing: 1px;
-}
-
-/* --- ROUTING CONTROLS LAYOUT --- */
 .routing-modes {
     display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
+    gap: 8px;
+    margin-bottom: 16px;
     flex-wrap: wrap;
 }
 
-.action-controls {
-    display: flex;
-    gap: 15px;
-    border-top: 1px dashed rgba(0, 255, 65, 0.3);
-    padding-top: 20px;
-}
-
-/* --- BUTTON STATES --- */
-.mode-btn.active-mode {
-    background: rgba(0, 255, 65, 0.2);
-    box-shadow: inset 0 0 10px var(--color-phosphor);
-}
-
-.action-btn {
+.routing-btn {
     background: transparent;
-    border: 2px solid var(--color-phosphor);
-    color: var(--color-phosphor);
+    border: 2px solid var(--primary-border);
+    color: var(--primary);
     font-family: 'Share Tech Mono', monospace;
-    font-size: 1.2rem;
-    padding: 15px 30px;
+    font-size: 0.85rem;
+    padding: 8px 16px;
     cursor: pointer;
-    transition: all 0.2s ease;
-    text-transform: uppercase;
-    font-weight: bold;
+    transition: all 0.15s ease-in-out;
 }
-
-.action-btn:hover:not(:disabled) {
-    background: var(--color-phosphor);
-    color: var(--bg-void);
-    box-shadow: 0 0 20px var(--color-phosphor);
+.routing-btn:hover {
+    background: var(--primary);
+    color: #000;
+    box-shadow: 0 0 15px var(--primary-dim);
 }
-
-/* The Powered-Down State */
-button:disabled {
+.routing-btn.active-mode {
+    background: var(--primary-dim);
+    box-shadow: inset 0 0 10px var(--primary-dim);
+    border-color: var(--primary);
+}
+.routing-btn:disabled {
     border-color: #333 !important;
     color: #555 !important;
     cursor: not-allowed !important;
     box-shadow: none !important;
     background: transparent !important;
-    text-shadow: none !important;
 }
 
-/* The Locked Node State */
-.node-locked {
-    border: 2px solid var(--color-amber) !important;
-    color: var(--color-amber) !important;
-    box-shadow: 0 0 15px rgba(255, 176, 0, 0.4) !important;
-    animation: none !important; /* Stops any RNG flashing */
+.router-action-controls {
+    display: flex;
+    gap: 12px;
+    border-top: 1px dashed rgba(255,255,255,0.1);
+    padding-top: 16px;
 }
 
-/* --- MOBILE OVERRIDES (RESPONSIVE PROTOCOL) --- */
+.router-action-btn {
+    background: transparent;
+    border: 2px solid var(--primary-border);
+    color: var(--primary);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1rem;
+    padding: 12px 24px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+.router-action-btn:hover:not(:disabled) {
+    background: var(--primary);
+    color: #000;
+    box-shadow: 0 0 20px var(--primary-dim);
+}
+.router-action-btn:disabled {
+    border-color: #333 !important;
+    color: #555 !important;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+    background: transparent !important;
+}
+.router-action-btn.btn-glow {
+    border-color: var(--primary);
+    box-shadow: 0 0 15px var(--primary-dim);
+}
+
+/* --- PLACEHOLDER OVERLAY --- */
+.placeholder-overlay {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.97);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 0.8rem;
+}
+.placeholder-back-btn {
+    padding: 6px 20px; border: 1px solid var(--primary-border);
+    background: none; color: var(--primary);
+    cursor: pointer; font-family: 'Share Tech Mono', monospace;
+    font-size: 0.9rem; transition: all 0.2s; border-radius: 2px;
+}
+.placeholder-back-btn:hover { background: var(--primary); color: #000; }
+
+/* --- UTILITY --- */
+.hidden { display: none !important; }
+.glitch-text { text-shadow: 2px 0 red, -2px 0 blue; }
+
+/* --- MOBILE RESPONSIVE --- */
 @media (max-width: 768px) {
-    /* Tighten up the main container to save screen real estate */
-    .terminal-container {
-        margin: 10px;
-        padding: 15px;
-    }
-
-    /* Stack the architecture specs into a single column */
-    .specs-grid {
-        grid-template-columns: 1fr; 
-    }
-
-    /* Stack the charity nodes so they are large, tappable targets */
     .charity-grid {
-        grid-template-columns: 1fr; 
+        grid-template-columns: 1fr;
     }
-
-    /* Stack all the mechanical buttons vertically */
     .routing-modes {
-        flex-direction: column; 
+        flex-direction: column;
     }
-
-    .action-controls {
-        flex-direction: column; 
+    .router-action-controls {
+        flex-direction: column;
     }
-
-    /* Make all buttons span the full width of the screen for easy thumb access */
-    .action-btn, .mechanical-btn {
-        width: 100%; 
+    .routing-btn, .router-action-btn {
+        width: 100%;
         text-align: center;
-        margin-right: 0;
-        margin-bottom: 10px;
-        padding: 15px;
     }
-
-    /* Shrink the headers slightly to fit narrow screens */
-    .phosphor-glow {
-        font-size: 1.3rem; 
-    }
-
-    /* Bump up the relative size so it's readable on phone */
-    .terminal-logo {
-        font-size: 2vw; 
-        margin-bottom: 10px;
-    }
-
-    #boot-sequence {
-        min-height: calc(60px + 13.2vw + 9.6rem);
+    .ascii-logo {
+        font-size: clamp(0.3rem, 2vw, 0.6rem);
     }
 }

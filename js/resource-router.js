@@ -1,179 +1,211 @@
-// --- MODULE: GLOBAL RESOURCE ROUTING (v2.0) ---
+// ==========================================
+// GLOBAL RESOURCE ROUTING (v2.0)
+// ==========================================
 
 const paymentGateways = {
     "Water for Good": "https://buy.stripe.com/your_link_1",
     "Direct Relief": "https://buy.stripe.com/your_link_2",
     "Village Enterprise": "https://buy.stripe.com/your_link_3",
     "Peoples Consultants": "https://buy.stripe.com/your_link_4",
-    "Colorectal Cancer Alliance": "https://buy.stripe.com/your_link_5",
+    "Cancer Research Institute Inc.": "https://buy.stripe.com/your_link_5",
     "Crisis Aid International": "https://buy.stripe.com/your_link_6",
     "Upwardly Global": "https://buy.stripe.com/your_link_7",
     "Legal Aid Foundation of Los Angeles": "https://buy.stripe.com/your_link_8",
     "San Diego Humane Society": "https://buy.stripe.com/your_link_9"
 };
 
-// DOM Elements
-const nodes = document.querySelectorAll('.charity-node');
-const modeBtns = document.querySelectorAll('.mode-btn');
-const btnManual = document.getElementById('btn-manual');
-const btnRng = document.getElementById('btn-rng');
-const btnSplit = document.getElementById('btn-split');
-const btnConfirm = document.getElementById('btn-confirm');
-const btnDonate = document.getElementById('btn-donate');
+// --- DOM REFERENCES ---
+const routerNodes    = document.querySelectorAll('.charity-node');
+const routerModeBtns = document.querySelectorAll('.routing-btn');
+const btnManual      = document.getElementById('btn-manual');
+const btnRng         = document.getElementById('btn-rng');
+const btnSplit       = document.getElementById('btn-split');
+const btnConfirm     = document.getElementById('btn-confirm');
+const btnDonate      = document.getElementById('btn-donate');
 
-// System State
-let systemLocked = false;
-let activeNodes = [];
+// --- STATE ---
+let routerLocked = false;
+let routerActiveNodes = [];
 
-// --- CORE SYSTEM FUNCTIONS ---
+// --- BOOT LINES ---
+const routerBootLines = [
+    "> EXEC resource_router.exe",
+    "> CONNECTING TO GLOBAL NETWORK...",
+    "> LOADING CHARITY ENDPOINTS...",
+    "> PAYMENT GATEWAYS LINKED.",
+    "> AWAITING OPERATOR INPUT."
+];
 
-function updateSystemState() {
-    if (systemLocked) return;
-    
-    // Check how many nodes are currently active
-    activeNodes = Array.from(nodes).filter(n => n.classList.contains('node-active'));
-    
-    // Enable CONFIRM button only if at least 1 node is selected
-    btnConfirm.disabled = activeNodes.length === 0;
+// --- CORE FUNCTIONS ---
+function updateRouterState() {
+    if (routerLocked) return;
+    routerActiveNodes = Array.from(routerNodes).filter(n => n.classList.contains('node-active'));
+    btnConfirm.disabled = routerActiveNodes.length === 0;
 }
 
-function resetNodes() {
-    if (systemLocked) return;
-    nodes.forEach(node => {
+function resetRouterNodes() {
+    if (routerLocked) return;
+    routerNodes.forEach(node => {
         node.classList.remove('node-active');
-        node.style.opacity = '0.7';
-        node.style.backgroundColor = 'transparent';
-        node.style.color = 'var(--color-phosphor)';
     });
-    updateSystemState();
+    updateRouterState();
 }
 
-function setActiveMode(selectedBtn) {
-    if (systemLocked) return;
-    modeBtns.forEach(btn => btn.classList.remove('active-mode'));
+function setRouterActiveMode(selectedBtn) {
+    if (routerLocked) return;
+    routerModeBtns.forEach(btn => btn.classList.remove('active-mode'));
     selectedBtn.classList.add('active-mode');
-    resetNodes();
+    resetRouterNodes();
 }
 
-// --- SELECTION MODES ---
-
-// 1. MANUAL MODE (Default)
-nodes.forEach(node => {
+// --- MANUAL MODE ---
+routerNodes.forEach(node => {
     node.addEventListener('click', () => {
-        if (systemLocked || !btnManual.classList.contains('active-mode')) return;
-        
-        // Toggle the node on or off
+        if (routerLocked || !btnManual.classList.contains('active-mode')) return;
         node.classList.toggle('node-active');
-        updateSystemState();
+        updateRouterState();
     });
 });
 
-btnManual.addEventListener('click', () => setActiveMode(btnManual));
+btnManual.addEventListener('click', () => setRouterActiveMode(btnManual));
 
-// 2. RNG PROTOCOL
+// --- RNG PROTOCOL ---
 btnRng.addEventListener('click', () => {
-    if (systemLocked) return;
-    setActiveMode(btnRng);
-    
-    // Disable buttons during the animation
-    modeBtns.forEach(b => b.disabled = true);
-    
+    if (routerLocked) return;
+    setRouterActiveMode(btnRng);
+
+    routerModeBtns.forEach(b => b.disabled = true);
+
     let jumps = 0;
-    const maxJumps = Math.floor(Math.random() * 15) + 20; 
+    const maxJumps = Math.floor(Math.random() * 15) + 20;
     let currentSpeed = 40;
 
     function rngTick() {
-        resetNodes();
-        const randomIndex = Math.floor(Math.random() * nodes.length);
-        nodes[randomIndex].classList.add('node-active');
+        resetRouterNodes();
+        const randomIndex = Math.floor(Math.random() * routerNodes.length);
+        routerNodes[randomIndex].classList.add('node-active');
 
         jumps++;
         if (jumps < maxJumps) {
-            currentSpeed *= 1.12; 
+            currentSpeed *= 1.12;
             setTimeout(rngTick, currentSpeed);
         } else {
-            // Sequence complete
-            modeBtns.forEach(b => b.disabled = false);
-            updateSystemState();
+            routerModeBtns.forEach(b => b.disabled = false);
+            updateRouterState();
         }
     }
     rngTick();
 });
 
-// 3. LOAD BALANCER (Split All)
+// --- LOAD BALANCER ---
 btnSplit.addEventListener('click', () => {
-    if (systemLocked) return;
-    setActiveMode(btnSplit);
-    
+    if (routerLocked) return;
+    setRouterActiveMode(btnSplit);
+
     setTimeout(() => {
-        nodes.forEach(node => node.classList.add('node-active'));
-        updateSystemState();
+        routerNodes.forEach(node => node.classList.add('node-active'));
+        updateRouterState();
     }, 150);
 });
 
-// --- ACTION TRIGGERS ---
-
-// THE CONFIRM BUTTON
+// --- CONFIRM BUTTON ---
 btnConfirm.addEventListener('click', () => {
-    if (!systemLocked) {
-        // Locking state
-        systemLocked = true;
+    if (!routerLocked) {
+        // Lock
+        routerLocked = true;
+        routerActiveNodes = Array.from(routerNodes).filter(n => n.classList.contains('node-active'));
 
-        // Visually lock the currently active nodes
-        activeNodes.forEach(node => {
+        routerActiveNodes.forEach(node => {
             node.classList.remove('node-active');
             node.classList.add('node-locked');
         });
 
-        // Disable mode buttons, but keep confirm enabled so it can abort/unlock
-        modeBtns.forEach(btn => btn.disabled = true);
+        routerModeBtns.forEach(btn => btn.disabled = true);
         btnConfirm.disabled = false;
         btnConfirm.innerText = "[ ABORT UPLINK ]";
 
-        // Enable the Donate button
         btnDonate.disabled = false;
-        btnDonate.classList.add('amber-glow');
-
-        console.log("[SYSTEM LOCKED]: Ready for data transfer.");
+        btnDonate.classList.add('btn-glow');
     } else {
-        // Unlocking state
-        systemLocked = false;
+        // Unlock
+        routerLocked = false;
 
-        // Restore locked nodes back to active selection
         document.querySelectorAll('.node-locked').forEach(node => {
             node.classList.remove('node-locked');
             node.classList.add('node-active');
         });
 
-        // Re-enable controls and return labels/styles to default
-        modeBtns.forEach(btn => btn.disabled = false);
+        routerModeBtns.forEach(btn => btn.disabled = false);
         btnConfirm.innerText = "[ CONFIRM UPLINK ]";
         btnDonate.disabled = true;
-        btnDonate.classList.remove('amber-glow');
+        btnDonate.classList.remove('btn-glow');
         btnDonate.innerText = "[ INITIATE TRANSFER ]";
 
-        // Recompute activeNodes now that system is unlocked
-        updateSystemState();
-
-        console.log("[SYSTEM UNLOCKED]: Uplink aborted by operator.");
+        updateRouterState();
     }
 });
 
-// THE DONATE BUTTON
+// --- DONATE BUTTON ---
 btnDonate.addEventListener('click', () => {
     btnDonate.innerText = "[ TRANSFERRING... ]";
-    
-    activeNodes.forEach(node => {
+
+    routerActiveNodes.forEach(node => {
         const charityName = node.innerText;
-        if(paymentGateways[charityName]) {
-            // Note: Browsers may block multiple popups if "Load Balancer" is used. 
-            // The user will need to allow popups for this site.
+        if (paymentGateways[charityName]) {
             window.open(paymentGateways[charityName], '_blank');
         }
     });
 
-    // Optional: Reset the system after 3 seconds
     setTimeout(() => {
-        location.reload(); // Reboots the terminal UI
+        // Reset state instead of full page reload
+        routerLocked = false;
+        document.querySelectorAll('.node-locked').forEach(node => {
+            node.classList.remove('node-locked');
+        });
+        routerNodes.forEach(node => node.classList.remove('node-active'));
+        routerModeBtns.forEach(btn => btn.disabled = false);
+        btnManual.classList.add('active-mode');
+        btnRng.classList.remove('active-mode');
+        btnSplit.classList.remove('active-mode');
+        btnConfirm.disabled = true;
+        btnConfirm.innerText = "[ CONFIRM UPLINK ]";
+        btnDonate.disabled = true;
+        btnDonate.classList.remove('btn-glow');
+        btnDonate.innerText = "[ INITIATE TRANSFER ]";
     }, 3000);
 });
+
+// --- LAUNCH / CLOSE ---
+function launchResourceRouter() {
+    const layer = document.getElementById('layer-resource-router');
+    const loading = document.getElementById('router-loading');
+    const textEl = document.getElementById('router-loading-text');
+    const app = document.getElementById('router-app');
+
+    layer.style.display = 'flex';
+    app.style.display = 'none';
+
+    appBootAnimation(loading, textEl, routerBootLines, () => {
+        app.style.display = 'flex';
+    });
+}
+
+function closeResourceRouter() {
+    document.getElementById('layer-resource-router').style.display = 'none';
+
+    // Reset state on close
+    routerLocked = false;
+    document.querySelectorAll('.node-locked').forEach(node => {
+        node.classList.remove('node-locked');
+    });
+    routerNodes.forEach(node => node.classList.remove('node-active'));
+    routerModeBtns.forEach(btn => btn.disabled = false);
+    btnManual.classList.add('active-mode');
+    btnRng.classList.remove('active-mode');
+    btnSplit.classList.remove('active-mode');
+    btnConfirm.disabled = true;
+    btnConfirm.innerText = "[ CONFIRM UPLINK ]";
+    btnDonate.disabled = true;
+    btnDonate.classList.remove('btn-glow');
+    btnDonate.innerText = "[ INITIATE TRANSFER ]";
+}
