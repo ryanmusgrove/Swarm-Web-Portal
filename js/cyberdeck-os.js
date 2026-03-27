@@ -32,7 +32,7 @@ function handleAppTileAction(action) {
     if (action === 'particle-lab') launchParticleLab();
     else if (action === 'sysmon') launchSysMon();
     else if (action === 'resource-router') launchResourceRouter();
-    else if (action === 'net-scan') showPlaceholder('NET_SCAN');
+    else if (action === 'bee-sim') launchBeeSim();
     else if (action === 'crypt-vault') showPlaceholder('CRYPT_VAULT');
     else if (action === 'jack-in') showPlaceholder('JACK_IN');
 }
@@ -88,6 +88,7 @@ function getActiveOverlayLayer() {
         'layer-placeholder',
         'layer-resource-router',
         'layer-sysmon',
+        'layer-beesim',
         'layer-particle-lab'
     ];
     for (const id of overlayOrder) {
@@ -171,6 +172,11 @@ function handleGlobalKeydown(event) {
     }
     if (isLayerVisible('layer-sysmon')) {
         closeSysMon();
+        event.preventDefault();
+        return;
+    }
+    if (isLayerVisible('layer-beesim') && typeof closeBeeSim === 'function') {
+        closeBeeSim();
         event.preventDefault();
         return;
     }
@@ -378,36 +384,7 @@ setInterval(() => {
     if (el) el.innerText = `SYS.TIME: ${new Date().toLocaleTimeString()}`;
 }, 1000);
 
-// --- SYS MON HARDWARE SIMULATION ---
-let sysmonInterval = null;
 let cancelSysMonBoot = null;
-
-function startSysMonSimulation() {
-    sysmonInterval = setInterval(() => {
-        const cpu = 30 + Math.floor(Math.random() * 40);
-        const mem = 75 + Math.floor(Math.random() * 20);
-        const temp = 70 + Math.floor(Math.random() * 25);
-        const gpu = 40 + Math.floor(Math.random() * 50);
-
-        const cpuEl = document.getElementById('sysmon-cpu');
-        const memEl = document.getElementById('sysmon-mem');
-        const tempEl = document.getElementById('sysmon-temp');
-        const gpuEl = document.getElementById('sysmon-gpu');
-        const cpuBar = document.getElementById('sysmon-cpu-bar');
-        const memBar = document.getElementById('sysmon-mem-bar');
-        const tempBar = document.getElementById('sysmon-temp-bar');
-        const gpuBar = document.getElementById('sysmon-gpu-bar');
-
-        if (cpuEl) { cpuEl.textContent = cpu + '%'; cpuBar.style.width = cpu + '%'; }
-        if (memEl) { memEl.textContent = mem + '%'; memBar.style.width = mem + '%'; }
-        if (tempEl) { tempEl.textContent = temp + '\u00B0C'; tempBar.style.width = temp + '%'; }
-        if (gpuEl) { gpuEl.textContent = gpu + '%'; gpuBar.style.width = gpu + '%'; }
-    }, 1500);
-}
-
-function stopSysMonSimulation() {
-    if (sysmonInterval) { clearInterval(sysmonInterval); sysmonInterval = null; }
-}
 
 // --- APP BOOT ANIMATION (shared helper) ---
 function appBootAnimation(loadingEl, textEl, lines, onComplete) {
@@ -480,7 +457,6 @@ function launchSysMon() {
         cancelSysMonBoot = null;
         app.style.display = 'flex';
         changeProtocol(currentProtocol);
-        startSysMonSimulation();
     });
 }
 
@@ -490,7 +466,6 @@ function closeSysMon() {
         cancelSysMonBoot = null;
     }
     document.getElementById('layer-sysmon').style.display = 'none';
-    stopSysMonSimulation();
     restoreFocusForLayer('layer-sysmon');
 }
 
