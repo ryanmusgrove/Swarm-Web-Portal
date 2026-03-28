@@ -17,6 +17,13 @@ const docsSections = [
 <p>Welcome to <code>SWARM_OS v7.0.4</code>, the Cyberdeck operating system built by <strong>Onyx Cybernetics</strong> for the <strong>Deck-MK IV</strong> platform.</p>
 <p>This interface is a retro-futuristic cyberpunk terminal designed around swarm intelligence concepts. It features interactive simulations, system monitoring, resource routing, and a fully themed visual environment.</p>
 <p>The system is powered by the Swarm Engine — a high-performance runtime built on zero-allocation memory arenas, SIMD-aligned data layouts, and lock-free concurrency primitives.</p>
+<h3>Hardware Components</h3>
+<p>The Deck-MK IV consists of three physical components:</p>
+<ul>
+<li><strong>Main Display</strong> — The primary CRT-style viewport where the OS and all applications render</li>
+<li><strong>Mini Display</strong> — A thin status strip between the screen and console, showing protocol-driven animations</li>
+<li><strong>Deck Console</strong> — The hardware control base with theme selector, protocol dial, and power switch</li>
+</ul>
 `
     },
     {
@@ -62,17 +69,55 @@ const docsSections = [
 `
     },
     {
+        id: 'main-display',
+        title: 'MAIN DISPLAY',
+        content: `
+<p>The <strong>Main Display</strong> is the primary screen of the Deck-MK IV — the large CRT-style viewport that occupies the center of the interface. All system output and applications render here.</p>
+<h3>Screen Layers</h3>
+<p>The display uses a layered rendering stack. Multiple full-screen layers exist at different z-indices, shown and hidden as the system state changes:</p>
+<ul>
+<li><strong>OFF Layer</strong> — "SYSTEM OFFLINE" message, visible when the deck is powered down</li>
+<li><strong>Terminal Layer</strong> — Scrolling BIOS/POST text during boot sequence</li>
+<li><strong>Swarm Layer</strong> — The "SWARM DEPLOYED" animation with bee particle effects</li>
+<li><strong>OS Desktop</strong> — The main workspace with application tiles, architecture specs, deployment targets, and the system clock</li>
+<li><strong>App Overlays</strong> — Full-screen application layers (Particle Lab, Bee Sim, SYS MON, Resource Router, Docs) that stack on top of the desktop</li>
+</ul>
+<h3>Visual Effects</h3>
+<p>A CRT scanline overlay is drawn across the entire display at all times, simulating the look of a cathode-ray tube monitor. The scanlines are purely cosmetic and do not affect interaction.</p>
+<h3>Status Bar</h3>
+<p>The top edge of the OS Desktop shows a persistent status bar with the system name (<code>SWARM_NET ACTIVE</code>), live system clock, hive connection status, and the current node location (<code>HIVE_NODE_01</code>).</p>
+`
+    },
+    {
         id: 'mini-display',
         title: 'MINI DISPLAY',
         content: `
-<p>The mini display is the thin hardware status strip between the main screen and the Deck Console. It activates when the system powers on and reflects the current protocol selection.</p>
+<p>The <strong>Mini Display</strong> is the thin hardware status strip positioned between the Main Display and the Deck Console. It serves as a secondary readout — a visual indicator of the deck's current operational mode.</p>
+<h3>Behavior</h3>
+<p>The mini display activates when the system powers on and remains active until shutdown. Its animation is driven entirely by the selected protocol, and its color palette adapts to the active theme.</p>
+<h3>Protocol Animations</h3>
 <ul>
-<li><strong>Standby:</strong> Animated bee particles with flutter motion</li>
-<li><strong>Ice Burn:</strong> Multi-layer flame shards rising upward in theme colors</li>
-<li><strong>Sentinel:</strong> Pulsing dot array in a radar-like scanning pattern</li>
-<li><strong>Ghost Mode:</strong> Horizontal drifting bars at 15% opacity</li>
+<li><strong>Standby:</strong> 30 animated mini bees with flutter motion drifting across the strip</li>
+<li><strong>Ice Burn:</strong> Multi-layer flame shards rising upward in 4 theme-matched color gradients</li>
+<li><strong>Sentinel:</strong> 20 pulsing dots in a radar-like scanning array</li>
+<li><strong>Ghost Mode:</strong> 12 horizontal drifting bars at 15% opacity — a stealth visualization</li>
 </ul>
-<p>The mini display uses CSS animations generated dynamically by the protocol handler, with colors derived from the active theme palette.</p>
+<p>Animations are generated dynamically as CSS keyframes by the protocol handler each time the protocol changes. Switching protocols instantly replaces the mini display content.</p>
+`
+    },
+    {
+        id: 'deck-console',
+        title: 'DECK CONSOLE',
+        content: `
+<p>The <strong>Deck Console</strong> is the physical control base of the Deck-MK IV, located below the Mini Display. It houses the hardware controls that configure the system's operational state.</p>
+<h3>Manufacturer Badge</h3>
+<p>The console header reads <code>ONYX CYBERNETICS // DECK-MK IV</code> — identifying the hardware manufacturer and model designation.</p>
+<h3>OS Theme Selector</h3>
+<p>A dropdown labeled <strong>OS THEME</strong> that switches the entire interface color scheme. Four themes are available: Swarm Amber, Neon Green, Cyber Blue, and Vaporwave Pink. Changes apply instantly across all layers, open apps, and the mini display.</p>
+<h3>Protocol Selector</h3>
+<p>A dropdown labeled <strong>PROTOCOL</strong> that activates different operational modes. Each protocol changes the mini display animation and updates process statuses in SYS MON. Options: Standby, Ice Burn, Sentinel, Ghost Mode.</p>
+<h3>Power Switch (PWR)</h3>
+<p>The main power toggle on the right side of the console. Engaging the switch initiates the full boot sequence. Disengaging it immediately shuts down the system — closing all open applications, clearing all animations, and returning the Main Display to the "SYSTEM OFFLINE" state. The switch provides visual feedback with an up/down toggle position.</p>
 `
     },
     {
