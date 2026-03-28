@@ -29,12 +29,24 @@ const asciiLogo      = document.getElementById('ascii-logo');
 const overlayFocusMemory = new Map();
 
 function handleAppTileAction(action) {
-    if (action === 'particle-lab') launchParticleLab();
+    if (action === 'apps-folder') openAppsFolder();
+    else if (action === 'docs-viewer') launchDocsViewer();
+    else if (action === 'particle-lab') launchParticleLab();
     else if (action === 'sysmon') launchSysMon();
     else if (action === 'resource-router') launchResourceRouter();
     else if (action === 'bee-sim') launchBeeSim();
     else if (action === 'crypt-vault') showPlaceholder('CRYPT_VAULT');
     else if (action === 'jack-in') showPlaceholder('JACK_IN');
+}
+
+function openAppsFolder() {
+    rememberFocusForLayer('layer-apps-folder');
+    document.getElementById('layer-apps-folder').style.display = 'block';
+}
+
+function closeAppsFolder() {
+    document.getElementById('layer-apps-folder').style.display = 'none';
+    restoreFocusForLayer('layer-apps-folder');
 }
 
 function bindCoreInteractions() {
@@ -46,6 +58,16 @@ function bindCoreInteractions() {
             const appTile = event.target.closest('[data-app-action]');
             if (!appTile) return;
             handleAppTileAction(appTile.dataset.appAction);
+        });
+    }
+    const folderLayer = document.getElementById('layer-apps-folder');
+    if (folderLayer) {
+        folderLayer.addEventListener('click', (event) => {
+            const folderApp = event.target.closest('[data-folder-app]');
+            if (!folderApp) return;
+            const appAction = folderApp.dataset.folderApp;
+            closeAppsFolder();
+            handleAppTileAction(appAction);
         });
     }
     document.addEventListener('keydown', handleGlobalKeydown);
@@ -86,10 +108,12 @@ function isLayerVisible(id) {
 function getActiveOverlayLayer() {
     const overlayOrder = [
         'layer-placeholder',
+        'layer-docs-viewer',
         'layer-resource-router',
         'layer-sysmon',
         'layer-beesim',
-        'layer-particle-lab'
+        'layer-particle-lab',
+        'layer-apps-folder'
     ];
     for (const id of overlayOrder) {
         if (isLayerVisible(id)) return document.getElementById(id);
@@ -165,6 +189,11 @@ function handleGlobalKeydown(event) {
         event.preventDefault();
         return;
     }
+    if (isLayerVisible('layer-docs-viewer') && typeof closeDocsViewer === 'function') {
+        closeDocsViewer();
+        event.preventDefault();
+        return;
+    }
     if (isLayerVisible('layer-resource-router') && typeof closeResourceRouter === 'function') {
         closeResourceRouter();
         event.preventDefault();
@@ -182,6 +211,11 @@ function handleGlobalKeydown(event) {
     }
     if (isLayerVisible('layer-particle-lab') && typeof closeParticleLab === 'function') {
         closeParticleLab();
+        event.preventDefault();
+        return;
+    }
+    if (isLayerVisible('layer-apps-folder')) {
+        closeAppsFolder();
         event.preventDefault();
     }
 }
@@ -249,6 +283,9 @@ function togglePower() {
         powerSwitch.classList.remove('on');
         if (typeof closeParticleLab === 'function') closeParticleLab();
         if (typeof closeResourceRouter === 'function') closeResourceRouter();
+        if (typeof closeBeeSim === 'function') closeBeeSim();
+        if (typeof closeDocsViewer === 'function') closeDocsViewer();
+        closeAppsFolder();
         closeSysMon();
         closePlaceholder();
         turnOff();

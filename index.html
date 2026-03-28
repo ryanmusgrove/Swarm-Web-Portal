@@ -73,13 +73,13 @@
         <div class="mb-4 flex-shrink-0">
             <div class="text-xs text-theme opacity-40 mb-2 uppercase tracking-widest">&#9656; Applications</div>
             <div class="grid grid-cols-3 md:grid-cols-6 gap-3">
-                <button type="button" class="app-tile" data-app-action="particle-lab" aria-label="Launch Particle Lab">
-                    <div class="app-tile-icon">&#9883;</div>
-                    <div class="text-xs text-theme">PARTICLE<br>LAB</div>
+                <button type="button" class="app-tile" data-app-action="apps-folder" aria-label="Open Apps folder">
+                    <div class="app-tile-icon">&#128193;</div>
+                    <div class="text-xs text-theme">APPS</div>
                 </button>
-                <button type="button" class="app-tile" data-app-action="bee-sim" aria-label="Launch Honey Bee Simulation">
-                    <div class="app-tile-icon">&#128029;</div>
-                    <div class="text-xs text-theme">BEE<br>SIM</div>
+                <button type="button" class="app-tile" data-app-action="docs-viewer" aria-label="Launch Documentation Viewer">
+                    <div class="app-tile-icon">&#128196;</div>
+                    <div class="text-xs text-theme">DOCS</div>
                 </button>
                 <button type="button" class="app-tile" data-app-action="crypt-vault" aria-label="Open Crypt Vault placeholder">
                     <div class="app-tile-icon">&#128272;</div>
@@ -147,6 +147,26 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Apps Folder Overlay -->
+    <div id="layer-apps-folder" class="absolute inset-0" style="z-index:34; display:none;">
+        <div class="folder-overlay">
+            <div class="folder-header">
+                <span class="text-theme" style="font-size:0.85rem; font-weight:bold; letter-spacing:2px;">&#128193; APPS</span>
+                <button class="plab-topbar-btn" onclick="closeAppsFolder()">&#10005; CLOSE</button>
+            </div>
+            <div class="folder-grid">
+                <button type="button" class="app-tile" data-folder-app="particle-lab" aria-label="Launch Particle Lab">
+                    <div class="app-tile-icon">&#9883;</div>
+                    <div class="text-xs text-theme">PARTICLE<br>LAB</div>
+                </button>
+                <button type="button" class="app-tile" data-folder-app="bee-sim" aria-label="Launch Honey Bee Simulation">
+                    <div class="app-tile-icon">&#128029;</div>
+                    <div class="text-xs text-theme">BEE<br>SIM</div>
+                </button>
             </div>
         </div>
     </div>
@@ -383,8 +403,26 @@
         </div>
     </div>
 
+    <!-- Docs Viewer App -->
+    <div id="layer-docs-viewer" class="absolute inset-0 bg-black" style="z-index:39; display:none; flex-direction:column;">
+        <div id="docs-loading" class="plab-loading-screen">
+            <div id="docs-loading-text"></div>
+        </div>
+        <div id="docs-app" style="display:none; flex-direction:column; flex:1; min-height:0;">
+            <div class="plab-topbar">
+                <button class="plab-topbar-btn" onclick="closeDocsViewer()">&#8592; EXIT</button>
+                <span class="text-theme" style="font-size:0.85rem; font-weight:bold; letter-spacing:2px;">DOCS <span style="opacity:0.4">v1.0</span></span>
+                <span></span>
+            </div>
+            <div class="docs-viewer-body">
+                <nav class="docs-sidebar" id="docs-sidebar"></nav>
+                <main class="docs-content" id="docs-content"></main>
+            </div>
+        </div>
+    </div>
+
     <!-- Placeholder App Overlay -->
-    <div id="layer-placeholder" style="position:absolute; inset:0; z-index:39; display:none;">
+    <div id="layer-placeholder" style="position:absolute; inset:0; z-index:40; display:none;">
         <div class="placeholder-overlay">
             <div style="font-size:2.5rem;">&#128274;</div>
             <div class="text-theme text-xl font-bold tracking-widest" id="placeholder-name">APP_NAME</div>
@@ -437,5 +475,6 @@
 <script src="js/particle-lab.js"></script>
 <script src="js/resource-router.js"></script>
 <script src="js/honey-bee-sim.js"></script>
+<script src="js/docs-viewer.js"></script>
 </body>
 </html>
