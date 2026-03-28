@@ -106,6 +106,19 @@ input[type="color"]:focus-visible {
 }
 .deck-select:focus { border-color: var(--primary); }
 
+/* --- MODE TOGGLE --- */
+.mode-toggle {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: #1a1a1a; border: 2px solid #333;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.3s ease;
+    appearance: none; -webkit-appearance: none; padding: 0;
+}
+.mode-toggle:hover { border-color: var(--primary); box-shadow: 0 0 10px var(--primary-dim); }
+.mode-icon { font-size: 1.1rem; transition: transform 0.4s ease; display: block; line-height: 1; }
+body.light-mode .mode-toggle { background: #e8e4de; border-color: #bbb; }
+body.light-mode .mode-toggle:hover { border-color: var(--primary); }
+
 /* --- POWER SWITCH --- */
 .switch-container { display: flex; flex-direction: column; align-items: center; gap: 5px; }
 .switch {
@@ -547,6 +560,138 @@ input[type="color"]:focus-visible {
     border: 1px solid var(--primary-border);
     font-size: 0.65rem;
 }
+
+/* --- LIGHT MODE OVERRIDES --- */
+body.light-mode {
+    background-color: #e8e4de;
+}
+body.light-mode .screen-container {
+    background-color: #f5f2ec;
+    border-color: #c8c4bc;
+    box-shadow: 0 0 20px rgba(0,0,0,0.15), inset 0 0 15px var(--primary-dim);
+}
+body.light-mode .scanlines {
+    background: linear-gradient(rgba(200,195,185,0) 50%, rgba(0,0,0,0.04) 50%), linear-gradient(90deg, rgba(255,0,0,0.02), rgba(0,255,0,0.01), rgba(0,0,255,0.02));
+}
+body.light-mode .mini-display-container {
+    background-color: #d8d4cc;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.15);
+}
+body.light-mode .deck-console {
+    background: linear-gradient(to bottom, #d8d4cc, #c8c4bc);
+    border-top-color: #bbb;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+body.light-mode .deck-select {
+    background: #f0ece4; color: var(--primary-border);
+    border-color: #bbb;
+}
+body.light-mode .deck-select option { background: #f0ece4; color: #333; }
+body.light-mode .text-zinc-400 { color: #666 !important; }
+body.light-mode .text-zinc-500 { color: #555 !important; }
+body.light-mode .text-zinc-600 { color: #444 !important; }
+
+/* Light mode: layer backgrounds */
+body.light-mode #layer-off { background-color: #f5f2ec !important; }
+body.light-mode #layer-off .text-zinc-600 { color: #999 !important; }
+body.light-mode #layer-terminal { background-color: #f5f2ec !important; }
+body.light-mode #layer-swarm { background-color: #f5f2ec !important; }
+body.light-mode #layer-os {
+    background: linear-gradient(135deg, #f5f2ec 0%, #ebe7df 100%) !important;
+}
+
+/* Light mode: app tile backgrounds */
+body.light-mode .app-tile {
+    background: rgba(255,255,255,0.6);
+    border-color: var(--primary-border);
+}
+body.light-mode .app-tile:hover {
+    background: var(--primary-dim);
+}
+body.light-mode .app-tile-icon {
+    background: rgba(255,255,255,0.7);
+}
+
+/* Light mode: architecture spec & deployment cards */
+body.light-mode [class*="border-theme"] {
+    border-color: var(--primary-border);
+}
+
+/* Light mode: full-screen app layers */
+body.light-mode #layer-particle-lab,
+body.light-mode #layer-beesim,
+body.light-mode #layer-sysmon,
+body.light-mode #layer-resource-router,
+body.light-mode #layer-docs-viewer {
+    background-color: #f5f2ec !important;
+}
+body.light-mode .plab-topbar {
+    background: rgba(230,226,218,0.95);
+    border-bottom-color: var(--primary-border);
+}
+body.light-mode .plab-topbar-btn { color: var(--primary-border); }
+body.light-mode .plab-topbar-btn:hover { background: var(--primary); color: #fff; }
+body.light-mode .plab-controls {
+    background: rgba(240,236,228,0.95);
+    border-left-color: var(--primary-border);
+}
+body.light-mode .plab-section-title { color: var(--primary-border); }
+body.light-mode .plab-cg label { color: var(--primary-border); }
+body.light-mode .plab-val { color: var(--primary); }
+body.light-mode .plab-btn {
+    background: rgba(255,255,255,0.5); color: var(--primary-border);
+    border-color: var(--primary-border);
+}
+body.light-mode .plab-btn:hover,
+body.light-mode .plab-btn.active { background: var(--primary); color: #fff; }
+body.light-mode .plab-canvas-wrap { background: #e8e4de; }
+body.light-mode .plab-loading-screen { background: #f5f2ec; }
+
+/* Light mode: SYS MON */
+body.light-mode .sysmon-panel {
+    background: rgba(255,255,255,0.4);
+    border-color: var(--primary-border);
+}
+
+/* Light mode: Resource Router */
+body.light-mode .charity-node {
+    background: rgba(255,255,255,0.3);
+    border-color: var(--primary-border);
+}
+body.light-mode .routing-btn,
+body.light-mode .router-action-btn {
+    background: rgba(255,255,255,0.3);
+}
+
+/* Light mode: Docs viewer */
+body.light-mode .docs-sidebar {
+    background: rgba(240,236,228,0.95);
+}
+body.light-mode .docs-sidebar-item {
+    color: var(--primary-border); opacity: 0.7;
+}
+body.light-mode .docs-sidebar-item:hover,
+body.light-mode .docs-sidebar-item.active {
+    opacity: 1; background: var(--primary-dim);
+}
+body.light-mode .docs-content { color: var(--primary-border); }
+body.light-mode .docs-section h2 { border-bottom-color: var(--primary-border); }
+body.light-mode .docs-section code {
+    background: rgba(0,0,0,0.05);
+    border-color: var(--primary-border);
+}
+
+/* Light mode: Folder overlay */
+body.light-mode .folder-overlay { background: rgba(240,236,228,0.97); }
+
+/* Light mode: Placeholder overlay */
+body.light-mode .placeholder-overlay { background: rgba(240,236,228,0.98); }
+body.light-mode .placeholder-back-btn:hover { color: #fff; }
+
+/* Light mode: Power switch */
+body.light-mode .switch { background: #ccc; border-color: #aaa; }
+body.light-mode .switch-toggle { background: #999; }
+body.light-mode #power-switch .switch-toggle { background: #c44; }
 
 /* --- UTILITY --- */
 .hidden { display: none !important; }

@@ -249,6 +249,15 @@ function changeTheme(key) {
     if (isPowerOn && osIsActive) startMiniDisplay();
 }
 
+// --- LIGHT / DARK MODE ---
+let isLightMode = false;
+function toggleLightMode() {
+    isLightMode = !isLightMode;
+    document.body.classList.toggle('light-mode', isLightMode);
+    const icon = document.getElementById('mode-icon');
+    if (icon) icon.innerHTML = isLightMode ? '&#9788;' : '&#9790;';
+}
+
 // --- PROTOCOL ---
 function changeProtocol(proto) {
     currentProtocol = proto;

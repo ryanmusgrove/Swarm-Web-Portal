@@ -51,6 +51,8 @@ const docsSections = [
 <li><strong>Vaporwave Pink</strong> — Hot pink, retro-wave styling</li>
 </ul>
 <p>Theme changes apply instantly to all UI elements including open applications, the mini display, and the Deck Console itself.</p>
+<h3>Light / Dark Mode</h3>
+<p>A toggle button between the theme selector and protocol dial switches between <strong>dark mode</strong> (default) and <strong>light mode</strong>. Dark mode uses deep black backgrounds with bright neon accents. Light mode inverts the palette to warm cream/parchment backgrounds while keeping the same accent colors — giving each of the 4 themes an alternate visual identity. The toggle icon switches between a moon (dark) and sun (light).</p>
 `
     },
     {
@@ -114,6 +116,8 @@ const docsSections = [
 <p>The console header reads <code>ONYX CYBERNETICS // DECK-MK IV</code> — identifying the hardware manufacturer and model designation.</p>
 <h3>OS Theme Selector</h3>
 <p>A dropdown labeled <strong>OS THEME</strong> that switches the entire interface color scheme. Four themes are available: Swarm Amber, Neon Green, Cyber Blue, and Vaporwave Pink. Changes apply instantly across all layers, open apps, and the mini display.</p>
+<h3>Light / Dark Toggle</h3>
+<p>A circular button between the theme and protocol selectors. Displays a moon icon in dark mode and a sun icon in light mode. Clicking it toggles the entire interface between dark (black backgrounds) and light (cream/parchment backgrounds). Works with all 4 color themes — effectively giving the system 8 visual configurations.</p>
 <h3>Protocol Selector</h3>
 <p>A dropdown labeled <strong>PROTOCOL</strong> that activates different operational modes. Each protocol changes the mini display animation and updates process statuses in SYS MON. Options: Standby, Ice Burn, Sentinel, Ghost Mode.</p>
 <h3>Power Switch (PWR)</h3>
