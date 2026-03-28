@@ -30,6 +30,7 @@ const overlayFocusMemory = new Map();
 
 function handleAppTileAction(action) {
     if (action === 'apps-folder') openAppsFolder();
+    else if (action === 'docs-folder') openDocsFolder();
     else if (action === 'docs-viewer') launchDocsViewer();
     else if (action === 'particle-lab') launchParticleLab();
     else if (action === 'sysmon') launchSysMon();
@@ -47,6 +48,16 @@ function openAppsFolder() {
 function closeAppsFolder() {
     document.getElementById('layer-apps-folder').style.display = 'none';
     restoreFocusForLayer('layer-apps-folder');
+}
+
+function openDocsFolder() {
+    rememberFocusForLayer('layer-docs-folder');
+    document.getElementById('layer-docs-folder').style.display = 'block';
+}
+
+function closeDocsFolder() {
+    document.getElementById('layer-docs-folder').style.display = 'none';
+    restoreFocusForLayer('layer-docs-folder');
 }
 
 function bindCoreInteractions() {
@@ -68,6 +79,16 @@ function bindCoreInteractions() {
             const appAction = folderApp.dataset.folderApp;
             closeAppsFolder();
             handleAppTileAction(appAction);
+        });
+    }
+    const docsFolderLayer = document.getElementById('layer-docs-folder');
+    if (docsFolderLayer) {
+        docsFolderLayer.addEventListener('click', (event) => {
+            const folderDoc = event.target.closest('[data-folder-doc]');
+            if (!folderDoc) return;
+            const docKey = folderDoc.dataset.folderDoc;
+            closeDocsFolder();
+            launchDocsViewer(docKey);
         });
     }
     document.addEventListener('keydown', handleGlobalKeydown);
@@ -113,6 +134,7 @@ function getActiveOverlayLayer() {
         'layer-sysmon',
         'layer-beesim',
         'layer-particle-lab',
+        'layer-docs-folder',
         'layer-apps-folder'
     ];
     for (const id of overlayOrder) {
@@ -214,6 +236,11 @@ function handleGlobalKeydown(event) {
         event.preventDefault();
         return;
     }
+    if (isLayerVisible('layer-docs-folder')) {
+        closeDocsFolder();
+        event.preventDefault();
+        return;
+    }
     if (isLayerVisible('layer-apps-folder')) {
         closeAppsFolder();
         event.preventDefault();
@@ -294,6 +321,7 @@ function togglePower() {
         if (typeof closeResourceRouter === 'function') closeResourceRouter();
         if (typeof closeBeeSim === 'function') closeBeeSim();
         if (typeof closeDocsViewer === 'function') closeDocsViewer();
+        closeDocsFolder();
         closeAppsFolder();
         closeSysMon();
         closePlaceholder();

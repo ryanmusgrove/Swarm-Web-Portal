@@ -493,6 +493,10 @@ body.light-mode .mode-toggle:hover { border-color: var(--primary); }
     gap: 1rem;
     max-width: 280px;
 }
+.folder-grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+    max-width: 420px;
+}
 
 /* --- DOCS VIEWER --- */
 .docs-viewer-body {
@@ -560,6 +564,53 @@ body.light-mode .mode-toggle:hover { border-color: var(--primary); }
     border: 1px solid var(--primary-border);
     font-size: 0.65rem;
 }
+
+/* --- CODE BLOCKS --- */
+.docs-code-block {
+    margin: 1rem 0 1.5rem;
+    border: 1px solid var(--primary-border);
+    border-radius: 4px;
+    overflow: hidden;
+    background: rgba(0,0,0,0.4);
+}
+.docs-code-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 10px;
+    background: rgba(0,0,0,0.6);
+    border-bottom: 1px solid var(--primary-border);
+}
+.docs-code-title {
+    font-size: 0.65rem; font-weight: bold;
+    color: var(--primary); opacity: 0.7;
+    text-transform: uppercase; letter-spacing: 1px;
+}
+.docs-code-toggle {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.6rem; color: var(--primary); opacity: 0.7;
+}
+.docs-code-toggle-btn {
+    font-family: 'Share Tech Mono', monospace;
+    background: none; border: 1px solid var(--primary-border);
+    color: var(--primary); padding: 2px 8px; font-size: 0.6rem;
+    cursor: pointer; transition: all 0.2s; border-radius: 2px;
+    opacity: 0.5;
+}
+.docs-code-toggle-btn:hover { opacity: 0.8; }
+.docs-code-toggle-btn.active {
+    opacity: 1; background: var(--primary-dim);
+    border-color: var(--primary);
+}
+.docs-code-pre {
+    margin: 0; padding: 12px 14px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.62rem; line-height: 1.65;
+    color: var(--primary); opacity: 0.8;
+    overflow-x: auto; white-space: pre;
+    max-height: 320px; overflow-y: auto;
+}
+.docs-code-pre::-webkit-scrollbar { width: 4px; height: 4px; }
+.docs-code-pre::-webkit-scrollbar-thumb { background: var(--primary-border); border-radius: 2px; }
+.docs-code-pre::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
 
 /* --- LIGHT MODE OVERRIDES --- */
 body.light-mode {
@@ -683,6 +734,15 @@ body.light-mode .docs-section code {
 
 /* Light mode: Folder overlay */
 body.light-mode .folder-overlay { background: rgba(240,236,228,0.97); }
+
+/* Light mode: Code blocks */
+body.light-mode .docs-code-block { background: rgba(255,255,255,0.5); border-color: var(--primary-border); }
+body.light-mode .docs-code-header { background: rgba(255,255,255,0.4); }
+body.light-mode .docs-code-title { color: var(--primary-border); }
+body.light-mode .docs-code-toggle { color: var(--primary-border); }
+body.light-mode .docs-code-toggle-btn { color: var(--primary-border); border-color: var(--primary-border); }
+body.light-mode .docs-code-toggle-btn.active { background: var(--primary-dim); color: var(--primary-border); }
+body.light-mode .docs-code-pre { color: var(--primary-border); }
 
 /* Light mode: Placeholder overlay */
 body.light-mode .placeholder-overlay { background: rgba(240,236,228,0.98); }
