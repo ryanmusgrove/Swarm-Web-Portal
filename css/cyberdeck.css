@@ -612,6 +612,107 @@ body.light-mode .mode-toggle:hover { border-color: var(--primary); }
 .docs-code-pre::-webkit-scrollbar-thumb { background: var(--primary-border); border-radius: 2px; }
 .docs-code-pre::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
 
+/* --- BUG REPORT PANEL --- */
+.bug-report-btn {
+    width: 36px; height: 36px; border-radius: 6px;
+    background: #1a1a1a; border: 2px solid #333;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.3s ease;
+    appearance: none; -webkit-appearance: none; padding: 0;
+}
+.bug-report-btn:hover { border-color: var(--primary); box-shadow: 0 0 10px var(--primary-dim); }
+.bug-report-btn.active { border-color: var(--primary); background: var(--primary-dim); }
+.bug-report-btn-icon { font-size: 1rem; line-height: 1; display: block; }
+
+.bug-report-panel {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    background: rgba(5, 5, 10, 0.97);
+    border-top: 1px solid var(--primary-border);
+    display: flex; flex-direction: column;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(5px);
+    max-height: 55%;
+}
+.bug-report-panel.open {
+    display: flex;
+    transform: translateY(0);
+}
+.bug-report-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--primary-border);
+    flex-shrink: 0;
+}
+.bug-report-header-actions {
+    display: flex; gap: 6px;
+}
+.bug-report-send-btn {
+    background: var(--primary-dim) !important;
+    border-color: var(--primary) !important;
+}
+.bug-report-send-btn:hover {
+    background: var(--primary) !important;
+    color: #000 !important;
+}
+.bug-report-body {
+    padding: 12px 14px;
+    display: flex; flex-direction: column; gap: 10px;
+    overflow-y: auto; flex: 1;
+}
+.bug-report-field {
+    display: flex; flex-direction: column; gap: 4px;
+}
+.bug-report-label {
+    font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--primary); opacity: 0.6;
+    display: flex; justify-content: space-between; align-items: center;
+}
+.bug-report-charcount {
+    font-size: 0.55rem; opacity: 0.5;
+}
+.bug-report-input,
+.bug-report-textarea {
+    font-family: 'Share Tech Mono', monospace;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid var(--primary-border);
+    color: var(--primary);
+    padding: 8px 10px;
+    font-size: 0.72rem;
+    border-radius: 3px;
+    outline: none;
+    transition: border-color 0.2s;
+    resize: none;
+}
+.bug-report-input:focus,
+.bug-report-textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 8px var(--primary-dim);
+}
+.bug-report-input::placeholder,
+.bug-report-textarea::placeholder {
+    color: var(--primary); opacity: 0.2;
+}
+.bug-report-textarea {
+    line-height: 1.5;
+}
+
+/* Bug report confirm overlay */
+.bug-report-confirm {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.85);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 12px;
+    z-index: 2;
+}
+.bug-report-confirm-text {
+    font-size: 0.75rem; color: var(--primary); text-align: center;
+    opacity: 0.85;
+}
+.bug-report-confirm-actions {
+    display: flex; gap: 8px;
+}
+
 /* --- LIGHT MODE OVERRIDES --- */
 body.light-mode {
     background-color: #e8e4de;
@@ -734,6 +835,22 @@ body.light-mode .docs-section code {
 
 /* Light mode: Folder overlay */
 body.light-mode .folder-overlay { background: rgba(240,236,228,0.97); }
+
+/* Light mode: Bug report */
+body.light-mode .bug-report-btn { background: #e8e4de; border-color: #bbb; }
+body.light-mode .bug-report-btn:hover { border-color: var(--primary); }
+body.light-mode .bug-report-btn.active { background: var(--primary-dim); }
+body.light-mode .bug-report-panel { background: rgba(240,236,228,0.97); }
+body.light-mode .bug-report-input,
+body.light-mode .bug-report-textarea {
+    background: rgba(255,255,255,0.6); color: var(--primary-border);
+    border-color: var(--primary-border);
+}
+body.light-mode .bug-report-input::placeholder,
+body.light-mode .bug-report-textarea::placeholder { color: var(--primary-border); }
+body.light-mode .bug-report-label { color: var(--primary-border); }
+body.light-mode .bug-report-confirm { background: rgba(240,236,228,0.9); }
+body.light-mode .bug-report-confirm-text { color: var(--primary-border); }
 
 /* Light mode: Code blocks */
 body.light-mode .docs-code-block { background: rgba(255,255,255,0.5); border-color: var(--primary-border); }

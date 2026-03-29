@@ -206,6 +206,11 @@ function handleGlobalKeydown(event) {
     if (event.key !== 'Escape') return;
 
     // Close highest z-index overlay/app first.
+    if (bugReportOpen) {
+        cancelBugReport();
+        event.preventDefault();
+        return;
+    }
     if (isLayerVisible('layer-placeholder')) {
         closePlaceholder();
         event.preventDefault();
@@ -285,6 +290,129 @@ function toggleLightMode() {
     if (icon) icon.innerHTML = isLightMode ? '&#9788;' : '&#9790;';
 }
 
+// --- BUG REPORT ---
+let bugReportOpen = false;
+
+function isBugReportDirty() {
+    const title = document.getElementById('bug-report-title');
+    const desc = document.getElementById('bug-report-desc');
+    return (title && title.value.length > 0) || (desc && desc.value.length > 0);
+}
+
+function openBugReport() {
+    if (bugReportOpen) return;
+
+    // Close side panels if open (Particle Lab / Bee Sim controls)
+    const plabCtrl = document.getElementById('plab-controls');
+    if (plabCtrl && !plabCtrl.classList.contains('collapsed')) {
+        plabCtrl.classList.add('collapsed');
+    }
+    const beeCtrl = document.getElementById('beesim-controls');
+    if (beeCtrl && !beeCtrl.classList.contains('collapsed')) {
+        beeCtrl.classList.add('collapsed');
+    }
+
+    const panel = document.getElementById('bug-report-panel');
+    const btn = document.getElementById('bug-report-btn');
+    if (!panel) return;
+    panel.style.display = 'flex';
+    // Force reflow for transition
+    panel.offsetHeight;
+    panel.classList.add('open');
+    if (btn) btn.classList.add('active');
+    bugReportOpen = true;
+
+    // Update char counters
+    updateBugCharCount('bug-report-title', 'bug-title-count', 60);
+    updateBugCharCount('bug-report-desc', 'bug-desc-count', 250);
+}
+
+function closeBugReport() {
+    const panel = document.getElementById('bug-report-panel');
+    const btn = document.getElementById('bug-report-btn');
+    if (!panel) return;
+
+    // Remove confirm overlay if present
+    const confirm = panel.querySelector('.bug-report-confirm');
+    if (confirm) confirm.remove();
+
+    panel.classList.remove('open');
+    if (btn) btn.classList.remove('active');
+    bugReportOpen = false;
+
+    // Clear fields
+    const title = document.getElementById('bug-report-title');
+    const desc = document.getElementById('bug-report-desc');
+    if (title) title.value = '';
+    if (desc) desc.value = '';
+    updateBugCharCount('bug-report-title', 'bug-title-count', 60);
+    updateBugCharCount('bug-report-desc', 'bug-desc-count', 250);
+
+    // Hide after transition
+    setTimeout(() => {
+        if (!bugReportOpen) panel.style.display = 'none';
+    }, 350);
+}
+
+function cancelBugReport() {
+    if (isBugReportDirty()) {
+        showBugReportConfirm();
+    } else {
+        closeBugReport();
+    }
+}
+
+function showBugReportConfirm() {
+    const panel = document.getElementById('bug-report-panel');
+    if (!panel || panel.querySelector('.bug-report-confirm')) return;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'bug-report-confirm';
+    overlay.innerHTML = `
+        <div class="bug-report-confirm-text">Discard unsaved changes?</div>
+        <div class="bug-report-confirm-actions">
+            <button type="button" class="plab-topbar-btn" id="bug-confirm-discard">DISCARD</button>
+            <button type="button" class="plab-topbar-btn" id="bug-confirm-keep">KEEP EDITING</button>
+        </div>
+    `;
+    panel.appendChild(overlay);
+
+    overlay.querySelector('#bug-confirm-discard').addEventListener('click', () => {
+        closeBugReport();
+    });
+    overlay.querySelector('#bug-confirm-keep').addEventListener('click', () => {
+        overlay.remove();
+    });
+}
+
+function toggleBugReport() {
+    if (!isPowerOn || !osIsActive) return;
+    if (bugReportOpen) {
+        cancelBugReport();
+    } else {
+        openBugReport();
+    }
+}
+
+function updateBugCharCount(inputId, countId, max) {
+    const input = document.getElementById(inputId);
+    const counter = document.getElementById(countId);
+    if (input && counter) {
+        counter.textContent = input.value.length + ' / ' + max;
+    }
+}
+
+function bindBugReportInputs() {
+    const title = document.getElementById('bug-report-title');
+    const desc = document.getElementById('bug-report-desc');
+    if (title) {
+        title.addEventListener('input', () => updateBugCharCount('bug-report-title', 'bug-title-count', 60));
+    }
+    if (desc) {
+        desc.addEventListener('input', () => updateBugCharCount('bug-report-desc', 'bug-desc-count', 250));
+    }
+}
+
 // --- PROTOCOL ---
 function changeProtocol(proto) {
     currentProtocol = proto;
@@ -321,6 +449,7 @@ function togglePower() {
         if (typeof closeResourceRouter === 'function') closeResourceRouter();
         if (typeof closeBeeSim === 'function') closeBeeSim();
         if (typeof closeDocsViewer === 'function') closeDocsViewer();
+        if (bugReportOpen) closeBugReport();
         closeDocsFolder();
         closeAppsFolder();
         closeSysMon();
@@ -555,6 +684,7 @@ function closePlaceholder() {
 }
 
 bindCoreInteractions();
+bindBugReportInputs();
 
 window.rememberFocusForLayer = rememberFocusForLayer;
 window.restoreFocusForLayer = restoreFocusForLayer;

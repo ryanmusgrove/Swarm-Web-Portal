@@ -445,6 +445,27 @@
         </div>
     </div>
 
+    <!-- Bug Report Panel -->
+    <div id="bug-report-panel" class="bug-report-panel" style="z-index:45; display:none;">
+        <div class="bug-report-header">
+            <span class="text-theme" style="font-size:0.8rem; font-weight:bold; letter-spacing:2px;">&#128027; BUG REPORT</span>
+            <div class="bug-report-header-actions">
+                <button type="button" class="plab-topbar-btn" onclick="cancelBugReport()">&#10005; CANCEL</button>
+                <button type="button" class="plab-topbar-btn bug-report-send-btn" id="bug-report-send">&#8593; SEND</button>
+            </div>
+        </div>
+        <div class="bug-report-body">
+            <div class="bug-report-field">
+                <label for="bug-report-title" class="bug-report-label">TITLE <span id="bug-title-count" class="bug-report-charcount">0 / 60</span></label>
+                <input type="text" id="bug-report-title" class="bug-report-input" maxlength="60" placeholder="Brief description of the issue...">
+            </div>
+            <div class="bug-report-field">
+                <label for="bug-report-desc" class="bug-report-label">DETAILS <span id="bug-desc-count" class="bug-report-charcount">0 / 250</span></label>
+                <textarea id="bug-report-desc" class="bug-report-textarea" maxlength="250" placeholder="Steps to reproduce, expected vs actual behavior..." rows="4"></textarea>
+            </div>
+        </div>
+    </div>
+
     <!-- Placeholder App Overlay -->
     <div id="layer-placeholder" style="position:absolute; inset:0; z-index:40; display:none;">
         <div class="placeholder-overlay">
@@ -490,11 +511,16 @@
             </div>
         </div>
     </div>
-    <div class="switch-container">
-        <div class="text-xs text-zinc-400 font-bold">PWR</div>
-        <button type="button" id="power-switch" class="switch" aria-label="Toggle system power" aria-pressed="false">
-            <div class="switch-toggle"></div>
+    <div class="flex items-center gap-4">
+        <button type="button" id="bug-report-btn" class="bug-report-btn" aria-label="Submit bug report" onclick="toggleBugReport()">
+            <span class="bug-report-btn-icon">&#128027;</span>
         </button>
+        <div class="switch-container">
+            <div class="text-xs text-zinc-400 font-bold">PWR</div>
+            <button type="button" id="power-switch" class="switch" aria-label="Toggle system power" aria-pressed="false">
+                <div class="switch-toggle"></div>
+            </button>
+        </div>
     </div>
 </div>
 
