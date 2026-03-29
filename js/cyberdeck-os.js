@@ -561,14 +561,10 @@ function startMiniDisplay() {
             miniDisplay.appendChild(bar);
         }
     } else {
-        for (let i = 0; i < 30; i++) {
-            const b = document.createElement('div');
-            b.className = 'bee-mini';
-            b.style.top = `${10+Math.random()*80}%`;
-            b.style.animationDuration = `${1.5+Math.random()*2}s, ${0.05+Math.random()*0.15}s`;
-            b.style.animationDelay = `${Math.random()*3}s, 0s`;
-            miniDisplay.appendChild(b);
-        }
+        const label = document.createElement('div');
+        label.className = 'mini-standby-label';
+        label.textContent = 'STANDBY';
+        miniDisplay.appendChild(label);
     }
 }
 

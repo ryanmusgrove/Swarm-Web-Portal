@@ -7,25 +7,9 @@ let cancelRouterBoot = null;
 const routerBootLines = [
     "> EXEC resource_router.exe",
     "> CONNECTING TO GLOBAL NETWORK...",
-    "> VERIFYING ENDPOINTS...",
-    "> UPLINK READY."
+    "> NO ROUTES CONFIGURED.",
+    "> AWAITING OPERATOR INPUT."
 ];
-
-function openExternalSafe(url) {
-    const newWindow = window.open(url, '_blank', 'noopener,noreferrer');
-    if (newWindow) newWindow.opener = null;
-}
-
-// --- Link click delegation ---
-(function bindRouterLinks() {
-    const routerApp = document.getElementById('router-app');
-    if (!routerApp) return;
-    routerApp.addEventListener('click', (event) => {
-        const tile = event.target.closest('[data-router-link]');
-        if (!tile) return;
-        openExternalSafe(tile.dataset.routerLink);
-    });
-})();
 
 // --- LAUNCH / CLOSE ---
 function launchResourceRouter() {
