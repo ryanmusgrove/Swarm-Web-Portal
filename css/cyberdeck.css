@@ -352,113 +352,28 @@ body.light-mode .mode-toggle:hover { border-color: var(--primary); }
 }
 
 /* --- RESOURCE ROUTER --- */
-.charity-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    margin-bottom: 16px;
-}
-
-.charity-node {
-    border: 1px dashed var(--primary-border);
-    padding: 10px;
-    text-align: center;
-    font-size: 0.75rem;
-    color: var(--primary);
-    opacity: 0.6;
-    cursor: pointer;
-    transition: all 0.15s ease-out;
-    user-select: none;
-}
-
-.charity-node.node-active {
-    opacity: 1;
-    border: 1px solid var(--primary);
-    color: var(--primary);
-    box-shadow: inset 0 0 15px var(--primary-dim), 0 0 10px var(--primary-dim);
-    font-weight: bold;
-    background: var(--primary-dim);
-}
-
-.charity-node.node-locked {
-    opacity: 1;
-    border: 2px solid var(--primary);
-    color: var(--primary);
-    box-shadow: 0 0 15px var(--primary-dim);
-    font-weight: bold;
-    background: var(--primary-dim);
-    animation: none;
-}
-
-.routing-modes {
+.router-link-container {
     display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    flex: 1;
+    min-height: 0;
 }
-
-.routing-btn {
-    background: transparent;
-    border: 2px solid var(--primary-border);
+.router-link-tile {
+    width: 140px;
+    padding: 1.2rem 1rem;
+}
+.router-link-tile .app-tile-icon {
+    width: 52px; height: 52px;
+    font-size: 1.6rem;
+}
+.router-link-sub {
+    font-size: 0.55rem;
     color: var(--primary);
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.85rem;
-    padding: 8px 16px;
-    cursor: pointer;
-    transition: all 0.15s ease-in-out;
-}
-.routing-btn:hover {
-    background: var(--primary);
-    color: #000;
-    box-shadow: 0 0 15px var(--primary-dim);
-}
-.routing-btn.active-mode {
-    background: var(--primary-dim);
-    box-shadow: inset 0 0 10px var(--primary-dim);
-    border-color: var(--primary);
-}
-.routing-btn:disabled {
-    border-color: #333 !important;
-    color: #555 !important;
-    cursor: not-allowed !important;
-    box-shadow: none !important;
-    background: transparent !important;
-}
-
-.router-action-controls {
-    display: flex;
-    gap: 12px;
-    border-top: 1px dashed rgba(255,255,255,0.1);
-    padding-top: 16px;
-}
-
-.router-action-btn {
-    background: transparent;
-    border: 2px solid var(--primary-border);
-    color: var(--primary);
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 1rem;
-    padding: 12px 24px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-transform: uppercase;
-    font-weight: bold;
-}
-.router-action-btn:hover:not(:disabled) {
-    background: var(--primary);
-    color: #000;
-    box-shadow: 0 0 20px var(--primary-dim);
-}
-.router-action-btn:disabled {
-    border-color: #333 !important;
-    color: #555 !important;
-    cursor: not-allowed !important;
-    box-shadow: none !important;
-    background: transparent !important;
-}
-.router-action-btn.btn-glow {
-    border-color: var(--primary);
-    box-shadow: 0 0 15px var(--primary-dim);
+    opacity: 0.35;
+    margin-top: 2px;
+    letter-spacing: 0.5px;
 }
 
 /* --- PLACEHOLDER OVERLAY --- */
@@ -806,14 +721,7 @@ body.light-mode .sysmon-panel {
 }
 
 /* Light mode: Resource Router */
-body.light-mode .charity-node {
-    background: rgba(255,255,255,0.3);
-    border-color: var(--primary-border);
-}
-body.light-mode .routing-btn,
-body.light-mode .router-action-btn {
-    background: rgba(255,255,255,0.3);
-}
+body.light-mode .router-link-sub { color: var(--primary-border); }
 
 /* Light mode: Docs viewer */
 body.light-mode .docs-sidebar {

@@ -395,34 +395,20 @@
         <div id="router-app" style="display:none; flex-direction:column; flex:1; min-height:0;">
             <div class="plab-topbar">
                 <button class="plab-topbar-btn" onclick="closeResourceRouter()">&#8592; EXIT</button>
-                <span class="text-theme" style="font-size:0.85rem; font-weight:bold; letter-spacing:2px;">RESOURCE ROUTER <span style="opacity:0.4">v2.0</span></span>
+                <span class="text-theme" style="font-size:0.85rem; font-weight:bold; letter-spacing:2px;">RESOURCE ROUTER <span style="opacity:0.4">v3.0</span></span>
                 <span></span>
             </div>
-            <div class="p-4 md:p-6 overflow-y-auto flex-grow">
-                <p class="text-xs text-theme opacity-60 mb-4">Awaiting operator input to route network resources.</p>
-
-                <div class="charity-grid">
-                    <div class="charity-node">Water for Good</div>
-                    <div class="charity-node">Direct Relief</div>
-                    <div class="charity-node">Village Enterprise</div>
-                    <div class="charity-node">Peoples Consultants</div>
-                    <div class="charity-node">Cancer Research Institute Inc.</div>
-                    <div class="charity-node">Crisis Aid International</div>
-                    <div class="charity-node">Upwardly Global</div>
-                    <div class="charity-node">Legal Aid Foundation of Los Angeles</div>
-                    <div class="charity-node">San Diego Humane Society</div>
-                </div>
-
-                <div class="routing-modes">
-                    <button id="btn-manual" class="routing-btn active-mode">[ MODE: MANUAL ]</button>
-                    <button id="btn-rng" class="routing-btn">[ MODE: RNG PROTOCOL ]</button>
-                    <button id="btn-split" class="routing-btn">[ MODE: LOAD BALANCER ]</button>
-                </div>
-
-                <div class="router-action-controls">
-                    <button id="btn-confirm" class="router-action-btn" disabled>[ CONFIRM UPLINK ]</button>
-                    <button id="btn-donate" class="router-action-btn" disabled>[ INITIATE TRANSFER ]</button>
-                </div>
+            <div class="router-link-container">
+                <button type="button" class="app-tile router-link-tile" data-router-link="https://www.wri.org/insights/how-sustainably-feed-10-billion-people-2050-21-charts" aria-label="Open World Resources Institute article">
+                    <div class="app-tile-icon">&#127793;</div>
+                    <div class="text-xs text-theme">SUSTAINABLE<br>FOOD</div>
+                    <div class="router-link-sub">World Resources Institute</div>
+                </button>
+                <button type="button" class="app-tile router-link-tile" data-router-link="https://www.charitynavigator.org/discover-charities/best-charities/highly-rated-charities/?bay=content.view&amp;cpid=2203" aria-label="Open Charity Navigator ratings">
+                    <div class="app-tile-icon">&#11088;</div>
+                    <div class="text-xs text-theme">TOP RATED<br>CHARITIES</div>
+                    <div class="router-link-sub">Charity Navigator</div>
+                </button>
             </div>
         </div>
     </div>
