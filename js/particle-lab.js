@@ -182,6 +182,10 @@ function setPlabMode(m) {
     btnLiquid.classList.remove('active'); btnLiquid.textContent='Liquid';
     canvas.classList.remove('gooey-effect');
 
+    // Unlock size slider by default (liquid will lock it)
+    const sizeSlider=document.getElementById('ctrl-size');
+    if(sizeSlider) sizeSlider.disabled=false;
+
     const shpEl=document.getElementById('ctrl-shape'), cmEl=document.getElementById('ctrl-colormode'), colEl=document.getElementById('ctrl-color');
     const scg=document.getElementById('solid-color-group');
 
@@ -200,8 +204,9 @@ function setPlabMode(m) {
     } else if(m==='liquid'){
         btnLiquid.classList.add('active'); btnLiquid.textContent='\u2713 Liquid';
         canvas.classList.add('gooey-effect');
-        pUI('amount',100,'100'); pUI('shape','circle'); shpEl.value='circle'; pUI('colormode','solid'); cmEl.value='solid'; scg.style.display='flex';
+        pUI('amount',100,'100'); pUI('size',20,'20'); pUI('shape','circle'); shpEl.value='circle'; pUI('colormode','solid'); cmEl.value='solid'; scg.style.display='flex';
         pUI('color','#00aaff'); colEl.value='#00aaff'; pUI('gravity',0.5,'0.5'); pUI('speed',2,'2'); pUI('trails',0,'0');
+        if(sizeSlider) sizeSlider.disabled=true;
     } else {
         pUI('shape','circle'); shpEl.value='circle'; pUI('colormode','solid'); cmEl.value='solid'; scg.style.display='flex';
         pUI('color','#00ffcc'); colEl.value='#00ffcc'; pUI('gravity',0,'0'); pUI('speed',1.5,'1.5'); pUI('trails',0,'0'); pUI('amount',150,'150');
@@ -239,7 +244,7 @@ document.getElementById('btn-load-preset').addEventListener('click', () => {
             b.classList.toggle('active',S.mode===m);
             b.textContent=S.mode===m?`\u2713 ${m[0].toUpperCase()+m.slice(1)}`:m[0].toUpperCase()+m.slice(1);
         });
-        if(S.mode==='liquid')canvas.classList.add('gooey-effect'); else canvas.classList.remove('gooey-effect');
+        if(S.mode==='liquid'){canvas.classList.add('gooey-effect');S.size=20;pUI('size',20,'20');document.getElementById('ctrl-size').disabled=true;} else {canvas.classList.remove('gooey-effect');document.getElementById('ctrl-size').disabled=false;}
     }
 });
 
@@ -266,6 +271,8 @@ function launchParticleLab() {
         cancelPlabBoot = null;
         plabAppEl.style.display = 'flex';
         plabActive = true;
+        // Restore gooey filter if liquid mode was active
+        if (S.mode === 'liquid') canvas.classList.add('gooey-effect');
         requestAnimationFrame(() => {
             plabResize();
             syncP();
