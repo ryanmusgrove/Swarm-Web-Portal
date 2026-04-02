@@ -1,9 +1,27 @@
 // ── Docs Viewer ──
 
-let cancelDocsViewerBoot = null;
-let currentDocKey = 'overview';
+// --- External functions (defined in sibling scripts) ---
+declare function appBootAnimation(loadingEl: HTMLElement, textEl: HTMLElement, lines: string[], onComplete: () => void): () => void;
+declare function rememberFocusForLayer(layerId: string): void;
+declare function restoreFocusForLayer(layerId: string): void;
 
-const docsBootLines = [
+// --- Types ---
+interface DocsSection {
+    id: string;
+    title: string;
+    content: string;
+}
+
+interface DocsEntry {
+    title: string;
+    version: string;
+    sections: DocsSection[];
+}
+
+let cancelDocsViewerBoot: (() => void) | null = null;
+let currentDocKey: string = 'overview';
+
+const docsBootLines: string[] = [
     "> EXEC docs_viewer.exe",
     "> INDEXING KNOWLEDGE BASE...",
     "> DECRYPTING ARCHIVES...",
@@ -11,7 +29,7 @@ const docsBootLines = [
 ];
 
 // ── Helper: build a code block with actual/pseudo toggle ──
-function makeCodeBlock(title, actualCode, pseudoCode) {
+function makeCodeBlock(title: string, actualCode: string, pseudoCode: string): string {
     return `
 <div class="docs-code-block" data-code-block>
     <div class="docs-code-header">
@@ -29,7 +47,7 @@ function makeCodeBlock(title, actualCode, pseudoCode) {
 // ══════════════════════════════════════════
 // DOCUMENT: System Overview
 // ══════════════════════════════════════════
-const overviewSections = [
+const overviewSections: DocsSection[] = [
     {
         id: 'overview',
         title: 'SYSTEM OVERVIEW',
@@ -252,9 +270,9 @@ const overviewSections = [
 // ══════════════════════════════════════════
 // DOCUMENT: Particle Lab
 // ══════════════════════════════════════════
-function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function esc(s: string): string { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-const particleLabSections = [
+const particleLabSections: DocsSection[] = [
     {
         id: 'plab-overview',
         title: 'OVERVIEW',
@@ -614,7 +632,7 @@ esc(`animationLoop():
 // ══════════════════════════════════════════
 // DOCUMENT: Bee Sim
 // ══════════════════════════════════════════
-const beeSimSections = [
+const beeSimSections: DocsSection[] = [
     {
         id: 'bee-overview',
         title: 'OVERVIEW',
@@ -1018,7 +1036,7 @@ esc(`applyMouse():
 // ══════════════════════════════════════════
 // Document registry
 // ══════════════════════════════════════════
-const docsRegistry = {
+const docsRegistry: Record<string, DocsEntry> = {
     'overview':      { title: 'SYSTEM OVERVIEW', version: 'v1.0', sections: overviewSections },
     'particle-lab':  { title: 'PARTICLE LAB',    version: 'v1.6', sections: particleLabSections },
     'bee-sim':       { title: 'BEE SIM',         version: 'v1.0', sections: beeSimSections }
@@ -1027,9 +1045,9 @@ const docsRegistry = {
 // ══════════════════════════════════════════
 // Build & Launch
 // ══════════════════════════════════════════
-function buildDocsContent(docKey) {
-    const sidebar = document.getElementById('docs-sidebar');
-    const content = document.getElementById('docs-content');
+function buildDocsContent(docKey: string): void {
+    const sidebar = document.getElementById('docs-sidebar') as HTMLElement;
+    const content = document.getElementById('docs-content') as HTMLElement;
     sidebar.innerHTML = '';
     content.innerHTML = '';
 
@@ -1060,10 +1078,10 @@ function buildDocsContent(docKey) {
 
     // Wire up code block toggles
     content.querySelectorAll('[data-code-block]').forEach(block => {
-        const actualPre = block.querySelector('[data-actual]');
-        const pseudoPre = block.querySelector('[data-pseudo]');
-        const btnActual = block.querySelector('[data-toggle="actual"]');
-        const btnPseudo = block.querySelector('[data-toggle="pseudo"]');
+        const actualPre = block.querySelector('[data-actual]') as HTMLPreElement | null;
+        const pseudoPre = block.querySelector('[data-pseudo]') as HTMLPreElement | null;
+        const btnActual = block.querySelector('[data-toggle="actual"]') as HTMLButtonElement | null;
+        const btnPseudo = block.querySelector('[data-toggle="pseudo"]') as HTMLButtonElement | null;
         if (!actualPre || !pseudoPre || !btnActual || !btnPseudo) return;
 
         btnActual.addEventListener('click', () => {
@@ -1081,17 +1099,17 @@ function buildDocsContent(docKey) {
     });
 }
 
-function launchDocsViewer(docKey) {
-    docKey = docKey || 'overview';
-    currentDocKey = docKey;
+function launchDocsViewer(docKey?: string): void {
+    const resolvedKey = docKey || 'overview';
+    currentDocKey = resolvedKey;
 
-    const layer = document.getElementById('layer-docs-viewer');
-    const loading = document.getElementById('docs-loading');
-    const textEl = document.getElementById('docs-loading-text');
-    const app = document.getElementById('docs-app');
-    const titleEl = document.getElementById('docs-title');
+    const layer = document.getElementById('layer-docs-viewer') as HTMLDivElement;
+    const loading = document.getElementById('docs-loading') as HTMLDivElement;
+    const textEl = document.getElementById('docs-loading-text') as HTMLDivElement;
+    const app = document.getElementById('docs-app') as HTMLDivElement;
+    const titleEl = document.getElementById('docs-title') as HTMLSpanElement | null;
 
-    const doc = docsRegistry[docKey];
+    const doc = docsRegistry[resolvedKey];
     if (titleEl && doc) {
         titleEl.innerHTML = doc.title + ' <span style="opacity:0.4">' + doc.version + '</span>';
     }
@@ -1108,15 +1126,15 @@ function launchDocsViewer(docKey) {
     cancelDocsViewerBoot = appBootAnimation(loading, textEl, docsBootLines, () => {
         cancelDocsViewerBoot = null;
         app.style.display = 'flex';
-        buildDocsContent(docKey);
+        buildDocsContent(resolvedKey);
     });
 }
 
-function closeDocsViewer() {
+function closeDocsViewer(): void {
     if (cancelDocsViewerBoot) {
         cancelDocsViewerBoot();
         cancelDocsViewerBoot = null;
     }
-    document.getElementById('layer-docs-viewer').style.display = 'none';
+    (document.getElementById('layer-docs-viewer') as HTMLDivElement).style.display = 'none';
     if (typeof restoreFocusForLayer === 'function') restoreFocusForLayer('layer-docs-viewer');
 }
