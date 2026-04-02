@@ -1,0 +1,25 @@
+{
+  "name": "Swarm-Web-Portal",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^6.0.2",
+    "vite": "^8.0.3"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ryanmusgrove/Swarm-Web-Portal.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ryanmusgrove/Swarm-Web-Portal/issues"
+  },
+  "homepage": "https://github.com/ryanmusgrove/Swarm-Web-Portal#readme"
+}
