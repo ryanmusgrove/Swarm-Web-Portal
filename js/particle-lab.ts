@@ -2,48 +2,88 @@
 // PARTICLE LAB ENGINE
 // ==========================================
 
-const canvas = document.getElementById('particleCanvas');
-const ctx = canvas.getContext('2d');
-const plabCanvasWrap = document.getElementById('plab-canvas-wrap');
-const layerPLab = document.getElementById('layer-particle-lab');
-const plabLoadingEl = document.getElementById('plab-loading');
-const plabLoadingText = document.getElementById('plab-loading-text');
-const plabAppEl = document.getElementById('plab-app');
+// --- External functions (defined in sibling scripts) ---
+declare function appBootAnimation(loadingEl: HTMLElement, textEl: HTMLElement, lines: string[], onComplete: () => void): () => void;
+declare function rememberFocusForLayer(layerId: string): void;
+declare function restoreFocusForLayer(layerId: string): void;
 
-const S = {
+// --- Types ---
+type ParticleMode = 'snow' | 'vortex' | 'plexus' | 'liquid' | 'normal';
+type ParticleShape = 'square' | 'circle' | 'triangle' | 'star';
+type ParticleColorMode = 'solid' | 'random' | 'velocity';
+
+interface ParticleConfig {
+    mode: ParticleMode;
+    amount: number;
+    size: number;
+    speed: number;
+    gravity: number;
+    repelStrength: number;
+    trails: number;
+    shape: ParticleShape;
+    colormode: ParticleColorMode;
+    color: string;
+}
+
+interface ParticleMouse {
+    x: number;
+    y: number;
+    leftDown: boolean;
+    rightDown: boolean;
+    attractRadius: number;
+}
+
+const canvas = document.getElementById('particleCanvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+const plabCanvasWrap = document.getElementById('plab-canvas-wrap') as HTMLDivElement;
+const layerPLab = document.getElementById('layer-particle-lab') as HTMLDivElement;
+const plabLoadingEl = document.getElementById('plab-loading') as HTMLDivElement;
+const plabLoadingText = document.getElementById('plab-loading-text') as HTMLDivElement;
+const plabAppEl = document.getElementById('plab-app') as HTMLDivElement;
+
+const S: ParticleConfig = {
     mode: 'plexus', amount: 150, size: 3, speed: 1.5, gravity: 0,
     repelStrength: 1.5, trails: 0, shape: 'circle', colormode: 'solid', color: '#00ffcc'
 };
-let particles = [];
-let pw = 100, ph = 100;
-let plabActive = false, plabAnimId = null;
-let cancelPlabBoot = null;
+let particles: Particle[] = [];
+let pw: number = 100, ph: number = 100;
+let plabActive: boolean = false, plabAnimId: number | null = null;
+let cancelPlabBoot: (() => void) | null = null;
 const LIQUID_PAIR_SAMPLE_TARGET = 320;
 const PLEXUS_SAMPLE_TARGET = 320;
 
-const pmouse = { x: -1000, y: -1000, leftDown: false, rightDown: false, attractRadius: 150 };
+const pmouse: ParticleMouse = { x: -1000, y: -1000, leftDown: false, rightDown: false, attractRadius: 150 };
 
-canvas.addEventListener('mousedown', e => { if(e.button===0)pmouse.leftDown=true; if(e.button===2)pmouse.rightDown=true; });
-canvas.addEventListener('mouseup',   e => { if(e.button===0)pmouse.leftDown=false; if(e.button===2)pmouse.rightDown=false; });
-canvas.addEventListener('mousemove', e => { const r=canvas.getBoundingClientRect(); pmouse.x=e.clientX-r.left; pmouse.y=e.clientY-r.top; });
+canvas.addEventListener('mousedown', (e: MouseEvent) => { if(e.button===0)pmouse.leftDown=true; if(e.button===2)pmouse.rightDown=true; });
+canvas.addEventListener('mouseup',   (e: MouseEvent) => { if(e.button===0)pmouse.leftDown=false; if(e.button===2)pmouse.rightDown=false; });
+canvas.addEventListener('mousemove', (e: MouseEvent) => { const r=canvas.getBoundingClientRect(); pmouse.x=e.clientX-r.left; pmouse.y=e.clientY-r.top; });
 canvas.addEventListener('mouseleave',() => { pmouse.leftDown=false; pmouse.rightDown=false; pmouse.x=-1000; });
-canvas.addEventListener('contextmenu', e => e.preventDefault());
+canvas.addEventListener('contextmenu', (e: Event) => e.preventDefault());
 
-function plabResize() {
+function plabResize(): void {
     pw = plabCanvasWrap.clientWidth; ph = plabCanvasWrap.clientHeight;
     canvas.width = pw; canvas.height = ph;
 }
 
-function rnd(a, b) { return Math.random() * (b - a) + a; }
-const neons = ['#00ffcc','#ff00ff','#00ff00','#ffff00','#ff3300','#0066ff'];
-function rndNeon() { return neons[Math.floor(Math.random()*neons.length)]; }
-function hex2rgb(h) {
+function rnd(a: number, b: number): number { return Math.random() * (b - a) + a; }
+const neons: string[] = ['#00ffcc','#ff00ff','#00ff00','#ffff00','#ff3300','#0066ff'];
+function rndNeon(): string { return neons[Math.floor(Math.random()*neons.length)]; }
+function hex2rgb(h: string): { r: number; g: number; b: number } {
     const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h);
     return r ? {r:parseInt(r[1],16),g:parseInt(r[2],16),b:parseInt(r[3],16)} : {r:0,g:255,b:204};
 }
 
 class Particle {
-    constructor(x, y, boom) {
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    baseColor: string;
+    da: number;
+    ds: number;
+    w: number;
+
+    constructor(x?: number, y?: number, boom?: boolean) {
         this.x = x||rnd(0,pw); this.y = y||rnd(0,ph);
         const a = rnd(0,Math.PI*2);
         const sp = boom ? rnd(S.speed*2,S.speed*5) : rnd(S.speed*0.2,S.speed);
@@ -52,7 +92,7 @@ class Particle {
         this.da = rnd(0,Math.PI*2); this.ds = rnd(0.02,0.05);
         this.w = rnd(0.5,1.5);
     }
-    update() {
+    update(): void {
         if (pmouse.leftDown || pmouse.rightDown) {
             let dx=pmouse.x-this.x, dy=pmouse.y-this.y;
             let d=Math.sqrt(dx*dx+dy*dy), a=Math.atan2(dy,dx);
@@ -100,8 +140,8 @@ class Particle {
             if(this.y<0){this.y=0;this.vy*=-1;} if(this.y>ph){this.y=ph;this.vy*=-0.8;if(S.gravity>0)this.vx*=0.98;}
         }
     }
-    draw() {
-        let c=S.color, cs=Math.sqrt(this.vx*this.vx+this.vy*this.vy);
+    draw(): void {
+        let c: string=S.color, cs=Math.sqrt(this.vx*this.vx+this.vy*this.vy);
         if(S.colormode==='random')c=this.baseColor;
         else if(S.colormode==='velocity'){let sp=S.mode==='snow'?(S.speed*0.5*this.w):cs;c=`hsl(${Math.min(280,sp*25)},100%,50%)`;}
         ctx.fillStyle=c; ctx.beginPath(); let sz=S.size;
@@ -113,12 +153,12 @@ class Particle {
     }
 }
 
-function syncP() {
+function syncP(): void {
     while(particles.length<S.amount)particles.push(new Particle());
     if(particles.length>S.amount)particles.splice(S.amount);
 }
 
-function plabAnimate() {
+function plabAnimate(): void {
     if(!plabActive)return;
     if(pmouse.rightDown)pmouse.attractRadius=Math.min(pmouse.attractRadius+5,Math.max(pw,ph));
     else pmouse.attractRadius=150;
@@ -141,11 +181,12 @@ function plabAnimate() {
 }
 
 // --- UI BINDINGS ---
-function plabBind(id, key, isF) {
-    const inp=document.getElementById(`ctrl-${id}`), disp=document.getElementById(`val-${id}`);
-    inp.addEventListener('input', e => {
-        S[key] = isF ? parseFloat(e.target.value) : parseInt(e.target.value);
-        if(disp) disp.textContent = S[key];
+function plabBind(id: string, key: keyof ParticleConfig, isF?: boolean): void {
+    const inp = document.getElementById(`ctrl-${id}`) as HTMLInputElement;
+    const disp = document.getElementById(`val-${id}`) as HTMLElement | null;
+    inp.addEventListener('input', () => {
+        (S as Record<string, number | string>)[key] = isF ? parseFloat(inp.value) : parseInt(inp.value);
+        if(disp) disp.textContent = String(S[key]);
         if(key==='amount') syncP();
     });
 }
@@ -153,28 +194,32 @@ plabBind('amount','amount'); plabBind('size','size');
 plabBind('speed','speed',true); plabBind('gravity','gravity',true);
 plabBind('trails','trails',true); plabBind('repel','repelStrength',true);
 
-document.getElementById('ctrl-shape').addEventListener('change', e => S.shape=e.target.value);
-document.getElementById('ctrl-colormode').addEventListener('change', e => {
-    S.colormode=e.target.value;
-    document.getElementById('solid-color-group').style.display=e.target.value==='solid'?'flex':'none';
+(document.getElementById('ctrl-shape') as HTMLSelectElement).addEventListener('change', (e: Event) => { S.shape = (e.target as HTMLSelectElement).value as ParticleShape; });
+(document.getElementById('ctrl-colormode') as HTMLSelectElement).addEventListener('change', (e: Event) => {
+    S.colormode = (e.target as HTMLSelectElement).value as ParticleColorMode;
+    (document.getElementById('solid-color-group') as HTMLDivElement).style.display = S.colormode==='solid'?'flex':'none';
 });
-document.getElementById('ctrl-color').addEventListener('input', e => S.color=e.target.value);
+(document.getElementById('ctrl-color') as HTMLInputElement).addEventListener('input', (e: Event) => { S.color = (e.target as HTMLInputElement).value; });
 
-document.getElementById('btn-explode').addEventListener('click', () => {
+(document.getElementById('btn-explode') as HTMLButtonElement).addEventListener('click', () => {
     let cx=pw/2,cy=ph/2;
     particles.forEach(p => { p.x=cx;p.y=cy; let a=rnd(0,Math.PI*2),sp=rnd(5,20); p.vx=Math.cos(a)*sp;p.vy=Math.sin(a)*sp; });
 });
 
-const btnSnow=document.getElementById('btn-snow'), btnVortex=document.getElementById('btn-vortex');
-const btnPlexus=document.getElementById('btn-plexus'), btnLiquid=document.getElementById('btn-liquid');
+const btnSnow = document.getElementById('btn-snow') as HTMLButtonElement;
+const btnVortex = document.getElementById('btn-vortex') as HTMLButtonElement;
+const btnPlexus = document.getElementById('btn-plexus') as HTMLButtonElement;
+const btnLiquid = document.getElementById('btn-liquid') as HTMLButtonElement;
 
-function pUI(key, val, dv) {
-    S[key]=val; let el=document.getElementById(`ctrl-${key}`); if(el)el.value=val;
-    if(dv!==null&&dv!==undefined){let d=document.getElementById(`val-${key}`);if(d)d.textContent=dv;}
+function pUI(key: string, val: number | string, dv?: number | string | null): void {
+    (S as Record<string, number | string>)[key]=val;
+    const el = document.getElementById(`ctrl-${key}`) as HTMLInputElement | HTMLSelectElement | null;
+    if(el) el.value = String(val);
+    if(dv!==null&&dv!==undefined){let d=document.getElementById(`val-${key}`) as HTMLElement | null;if(d)d.textContent=String(dv);}
     if(key==='amount')syncP();
 }
 
-function setPlabMode(m) {
+function setPlabMode(m: ParticleMode): void {
     S.mode=m;
     btnSnow.classList.remove('active'); btnSnow.textContent='Snow';
     btnVortex.classList.remove('active'); btnVortex.textContent='Vortex';
@@ -183,11 +228,13 @@ function setPlabMode(m) {
     canvas.classList.remove('gooey-effect');
 
     // Unlock size slider by default (liquid will lock it)
-    const sizeSlider=document.getElementById('ctrl-size');
+    const sizeSlider = document.getElementById('ctrl-size') as HTMLInputElement | null;
     if(sizeSlider) sizeSlider.disabled=false;
 
-    const shpEl=document.getElementById('ctrl-shape'), cmEl=document.getElementById('ctrl-colormode'), colEl=document.getElementById('ctrl-color');
-    const scg=document.getElementById('solid-color-group');
+    const shpEl = document.getElementById('ctrl-shape') as HTMLSelectElement;
+    const cmEl = document.getElementById('ctrl-colormode') as HTMLSelectElement;
+    const colEl = document.getElementById('ctrl-color') as HTMLInputElement;
+    const scg = document.getElementById('solid-color-group') as HTMLDivElement;
 
     if(m==='snow'){
         btnSnow.classList.add('active'); btnSnow.textContent='\u2713 Snow';
@@ -220,36 +267,36 @@ btnPlexus.addEventListener('click', () => setPlabMode(S.mode==='plexus'?'normal'
 btnLiquid.addEventListener('click', () => setPlabMode(S.mode==='liquid'?'normal':'liquid'));
 
 // --- PRESETS ---
-let presets = [];
-const presetSel = document.getElementById('ctrl-presets');
-document.getElementById('btn-save-preset').addEventListener('click', () => {
-    presets.push(JSON.parse(JSON.stringify(S)));
+let presets: ParticleConfig[] = [];
+const presetSel = document.getElementById('ctrl-presets') as HTMLSelectElement;
+(document.getElementById('btn-save-preset') as HTMLButtonElement).addEventListener('click', () => {
+    presets.push(JSON.parse(JSON.stringify(S)) as ParticleConfig);
     let i=presets.length-1;
     if(presets.length===1) presetSel.innerHTML='';
-    let o=document.createElement('option'); o.value=i; o.textContent=`Preset ${i+1}`;
-    presetSel.appendChild(o); presetSel.value=i;
-    let b=document.getElementById('btn-save-preset'),old=b.textContent; b.textContent='Saved!'; setTimeout(()=>b.textContent=old,1000);
+    let o=document.createElement('option'); o.value=String(i); o.textContent=`Preset ${i+1}`;
+    presetSel.appendChild(o); presetSel.value=String(i);
+    let b=document.getElementById('btn-save-preset') as HTMLButtonElement,old=b.textContent; b.textContent='Saved!'; setTimeout(()=>b.textContent=old,1000);
 });
-document.getElementById('btn-load-preset').addEventListener('click', () => {
+(document.getElementById('btn-load-preset') as HTMLButtonElement).addEventListener('click', () => {
     let i=parseInt(presetSel.value);
     if(i>=0&&presets[i]){
-        Object.assign(S,JSON.parse(JSON.stringify(presets[i])));
+        Object.assign(S,JSON.parse(JSON.stringify(presets[i])) as ParticleConfig);
         pUI('amount',S.amount,S.amount); pUI('size',S.size,S.size); pUI('speed',S.speed,S.speed);
         pUI('gravity',S.gravity,S.gravity); pUI('repel',S.repelStrength,S.repelStrength); pUI('trails',S.trails,S.trails);
-        document.getElementById('ctrl-shape').value=S.shape;
-        document.getElementById('ctrl-colormode').value=S.colormode;
-        document.getElementById('ctrl-color').value=S.color;
-        document.getElementById('solid-color-group').style.display=S.colormode==='solid'?'flex':'none';
-        [['snow',btnSnow],['vortex',btnVortex],['plexus',btnPlexus],['liquid',btnLiquid]].forEach(([m,b])=>{
+        (document.getElementById('ctrl-shape') as HTMLSelectElement).value=S.shape;
+        (document.getElementById('ctrl-colormode') as HTMLSelectElement).value=S.colormode;
+        (document.getElementById('ctrl-color') as HTMLInputElement).value=S.color;
+        (document.getElementById('solid-color-group') as HTMLDivElement).style.display=S.colormode==='solid'?'flex':'none';
+        ([['snow',btnSnow],['vortex',btnVortex],['plexus',btnPlexus],['liquid',btnLiquid]] as [string, HTMLButtonElement][]).forEach(([m,b])=>{
             b.classList.toggle('active',S.mode===m);
             b.textContent=S.mode===m?`\u2713 ${m[0].toUpperCase()+m.slice(1)}`:m[0].toUpperCase()+m.slice(1);
         });
-        if(S.mode==='liquid'){canvas.classList.add('gooey-effect');S.size=20;pUI('size',20,'20');document.getElementById('ctrl-size').disabled=true;} else {canvas.classList.remove('gooey-effect');document.getElementById('ctrl-size').disabled=false;}
+        if(S.mode==='liquid'){canvas.classList.add('gooey-effect');S.size=20;pUI('size',20,'20');(document.getElementById('ctrl-size') as HTMLInputElement).disabled=true;} else {canvas.classList.remove('gooey-effect');(document.getElementById('ctrl-size') as HTMLInputElement).disabled=false;}
     }
 });
 
 // --- LAUNCH / CLOSE ---
-const plabBootLines = [
+const plabBootLines: string[] = [
     "> EXEC particle_lab.exe",
     "> LOADING RENDER ENGINE... [OK]",
     "> ALLOCATING PARTICLE BUFFER...",
@@ -257,7 +304,7 @@ const plabBootLines = [
     "> DISPLAY READY."
 ];
 
-function launchParticleLab() {
+function launchParticleLab(): void {
     if (typeof rememberFocusForLayer === 'function') rememberFocusForLayer('layer-particle-lab');
     layerPLab.style.display = 'flex';
     plabAppEl.style.display = 'none';
@@ -281,7 +328,7 @@ function launchParticleLab() {
     });
 }
 
-function closeParticleLab() {
+function closeParticleLab(): void {
     if (cancelPlabBoot) {
         cancelPlabBoot();
         cancelPlabBoot = null;
@@ -294,8 +341,8 @@ function closeParticleLab() {
     if (typeof restoreFocusForLayer === 'function') restoreFocusForLayer('layer-particle-lab');
 }
 
-function togglePlabControls() {
-    document.getElementById('plab-controls').classList.toggle('collapsed');
+function togglePlabControls(): void {
+    (document.getElementById('plab-controls') as HTMLDivElement).classList.toggle('collapsed');
 }
 
 window.addEventListener('resize', () => { if (plabActive) plabResize(); });
