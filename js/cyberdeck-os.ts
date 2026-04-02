@@ -2,33 +2,55 @@
 // CYBERDECK OS - Core System
 // ==========================================
 
-const themes = {
+// --- External functions (defined in sibling scripts) ---
+declare function closeParticleLab(): void;
+declare function closeResourceRouter(): void;
+declare function closeBeeSim(): void;
+declare function closeDocsViewer(): void;
+declare function launchParticleLab(): void;
+declare function launchBeeSim(): void;
+declare function launchResourceRouter(): void;
+declare function launchDocsViewer(docKey?: string): void;
+declare function togglePlabControls(): void;
+declare function toggleBeeSimControls(): void;
+
+// --- Types ---
+interface CyberdeckTheme {
+    ui: string;
+    uiDim: string;
+    uiBorder: string;
+    flames: [string, string, string, string];
+}
+
+type ThemeKey = 'amber' | 'green' | 'blue' | 'pink';
+
+const themes: Record<ThemeKey, CyberdeckTheme> = {
     amber: { ui: '#f59e0b', uiDim: 'rgba(245,158,11,0.2)', uiBorder: '#78350f', flames: ['#78350f','#b45309','#f59e0b','#fef3c7'] },
     green: { ui: '#22c55e', uiDim: 'rgba(34,197,94,0.2)',   uiBorder: '#14532d', flames: ['#14532d','#16a34a','#22c55e','#bbf7d0'] },
     blue:  { ui: '#3b82f6', uiDim: 'rgba(59,130,246,0.2)',  uiBorder: '#1e3a8a', flames: ['#1e3a8a','#2563eb','#60a5fa','#ffffff'] },
     pink:  { ui: '#ec4899', uiDim: 'rgba(236,72,153,0.2)',  uiBorder: '#831843', flames: ['#831843','#be185d','#ec4899','#fce7f3'] }
 };
 
-let currentThemeKey = 'amber';
-let currentProtocol = 'standby';
-let osIsActive = false;
-let isPowerOn = false;
-let activeTimeouts = [];
+let currentThemeKey: ThemeKey = 'amber';
+let currentProtocol: string = 'standby';
+let osIsActive: boolean = false;
+let isPowerOn: boolean = false;
+let activeTimeouts: number[] = [];
 
 // --- DOM REFERENCES ---
-const layerOff       = document.getElementById('layer-off');
-const layerTerminal  = document.getElementById('layer-terminal');
-const layerSwarm     = document.getElementById('layer-swarm');
-const layerOs        = document.getElementById('layer-os');
-const terminalText   = document.getElementById('terminal-text');
-const loadingBar     = document.getElementById('loading-bar-container');
-const swarmContainer = document.getElementById('swarm-container');
-const miniDisplay    = document.getElementById('mini-display');
-const powerSwitch    = document.getElementById('power-switch');
-const asciiLogo      = document.getElementById('ascii-logo');
-const overlayFocusMemory = new Map();
+const layerOff       = document.getElementById('layer-off') as HTMLDivElement;
+const layerTerminal  = document.getElementById('layer-terminal') as HTMLDivElement;
+const layerSwarm     = document.getElementById('layer-swarm') as HTMLDivElement;
+const layerOs        = document.getElementById('layer-os') as HTMLDivElement;
+const terminalText   = document.getElementById('terminal-text') as HTMLDivElement;
+const loadingBar     = document.getElementById('loading-bar-container') as HTMLDivElement;
+const swarmContainer = document.getElementById('swarm-container') as HTMLDivElement;
+const miniDisplay    = document.getElementById('mini-display') as HTMLDivElement;
+const powerSwitch    = document.getElementById('power-switch') as HTMLButtonElement | null;
+const asciiLogo      = document.getElementById('ascii-logo') as HTMLPreElement;
+const overlayFocusMemory = new Map<string, HTMLElement>();
 
-function handleAppTileAction(action) {
+function handleAppTileAction(action: string): void {
     if (action === 'apps-folder') openAppsFolder();
     else if (action === 'docs-folder') openDocsFolder();
     else if (action === 'docs-viewer') launchDocsViewer();
@@ -40,53 +62,53 @@ function handleAppTileAction(action) {
     else if (action === 'jack-in') showPlaceholder('JACK_IN');
 }
 
-function openAppsFolder() {
+function openAppsFolder(): void {
     rememberFocusForLayer('layer-apps-folder');
-    document.getElementById('layer-apps-folder').style.display = 'block';
+    (document.getElementById('layer-apps-folder') as HTMLDivElement).style.display = 'block';
 }
 
-function closeAppsFolder() {
-    document.getElementById('layer-apps-folder').style.display = 'none';
+function closeAppsFolder(): void {
+    (document.getElementById('layer-apps-folder') as HTMLDivElement).style.display = 'none';
     restoreFocusForLayer('layer-apps-folder');
 }
 
-function openDocsFolder() {
+function openDocsFolder(): void {
     rememberFocusForLayer('layer-docs-folder');
-    document.getElementById('layer-docs-folder').style.display = 'block';
+    (document.getElementById('layer-docs-folder') as HTMLDivElement).style.display = 'block';
 }
 
-function closeDocsFolder() {
-    document.getElementById('layer-docs-folder').style.display = 'none';
+function closeDocsFolder(): void {
+    (document.getElementById('layer-docs-folder') as HTMLDivElement).style.display = 'none';
     restoreFocusForLayer('layer-docs-folder');
 }
 
-function bindCoreInteractions() {
+function bindCoreInteractions(): void {
     if (powerSwitch) {
         powerSwitch.addEventListener('click', togglePower);
     }
     if (layerOs) {
-        layerOs.addEventListener('click', (event) => {
-            const appTile = event.target.closest('[data-app-action]');
+        layerOs.addEventListener('click', (event: MouseEvent) => {
+            const appTile = (event.target as Element).closest('[data-app-action]') as HTMLElement | null;
             if (!appTile) return;
-            handleAppTileAction(appTile.dataset.appAction);
+            handleAppTileAction(appTile.dataset.appAction!);
         });
     }
-    const folderLayer = document.getElementById('layer-apps-folder');
+    const folderLayer = document.getElementById('layer-apps-folder') as HTMLDivElement | null;
     if (folderLayer) {
-        folderLayer.addEventListener('click', (event) => {
-            const folderApp = event.target.closest('[data-folder-app]');
+        folderLayer.addEventListener('click', (event: MouseEvent) => {
+            const folderApp = (event.target as Element).closest('[data-folder-app]') as HTMLElement | null;
             if (!folderApp) return;
-            const appAction = folderApp.dataset.folderApp;
+            const appAction = folderApp.dataset.folderApp!;
             closeAppsFolder();
             handleAppTileAction(appAction);
         });
     }
-    const docsFolderLayer = document.getElementById('layer-docs-folder');
+    const docsFolderLayer = document.getElementById('layer-docs-folder') as HTMLDivElement | null;
     if (docsFolderLayer) {
-        docsFolderLayer.addEventListener('click', (event) => {
-            const folderDoc = event.target.closest('[data-folder-doc]');
+        docsFolderLayer.addEventListener('click', (event: MouseEvent) => {
+            const folderDoc = (event.target as Element).closest('[data-folder-doc]') as HTMLElement | null;
             if (!folderDoc) return;
-            const docKey = folderDoc.dataset.folderDoc;
+            const docKey = folderDoc.dataset.folderDoc!;
             closeDocsFolder();
             launchDocsViewer(docKey);
         });
@@ -94,7 +116,7 @@ function bindCoreInteractions() {
     document.addEventListener('keydown', handleGlobalKeydown);
 }
 
-function rememberFocusForLayer(layerId) {
+function rememberFocusForLayer(layerId: string): void {
     const active = document.activeElement;
     if (active instanceof HTMLElement && active !== document.body) {
         overlayFocusMemory.set(layerId, active);
@@ -103,7 +125,7 @@ function rememberFocusForLayer(layerId) {
     }
 }
 
-function canReceiveFocus(el) {
+function canReceiveFocus(el: unknown): boolean {
     if (!(el instanceof HTMLElement)) return false;
     if (!document.contains(el)) return false;
     if (el.hasAttribute('disabled')) return false;
@@ -113,20 +135,20 @@ function canReceiveFocus(el) {
     return el.getClientRects().length > 0;
 }
 
-function restoreFocusForLayer(layerId) {
+function restoreFocusForLayer(layerId: string): void {
     const target = overlayFocusMemory.get(layerId);
     overlayFocusMemory.delete(layerId);
     if (!canReceiveFocus(target)) return;
     target.focus({ preventScroll: true });
 }
 
-function isLayerVisible(id) {
+function isLayerVisible(id: string): boolean {
     const el = document.getElementById(id);
     if (!el) return false;
     return window.getComputedStyle(el).display !== 'none';
 }
 
-function getActiveOverlayLayer() {
+function getActiveOverlayLayer(): HTMLElement | null {
     const overlayOrder = [
         'layer-placeholder',
         'layer-docs-viewer',
@@ -143,7 +165,7 @@ function getActiveOverlayLayer() {
     return null;
 }
 
-function getFocusableElements(container) {
+function getFocusableElements(container: HTMLElement): HTMLElement[] {
     const selector = [
         'a[href]',
         'area[href]',
@@ -154,7 +176,7 @@ function getFocusableElements(container) {
         '[tabindex]:not([tabindex="-1"])'
     ].join(',');
 
-    return Array.from(container.querySelectorAll(selector)).filter((el) => {
+    return (Array.from(container.querySelectorAll(selector)) as HTMLElement[]).filter((el) => {
         if (el.hasAttribute('hidden')) return false;
         const style = window.getComputedStyle(el);
         if (style.display === 'none' || style.visibility === 'hidden') return false;
@@ -162,7 +184,7 @@ function getFocusableElements(container) {
     });
 }
 
-function trapFocusInActiveOverlay(event) {
+function trapFocusInActiveOverlay(event: KeyboardEvent): boolean {
     if (event.key !== 'Tab') return false;
 
     const layer = getActiveOverlayLayer();
@@ -180,7 +202,7 @@ function trapFocusInActiveOverlay(event) {
     const last = focusables[focusables.length - 1];
     const active = document.activeElement;
 
-    if (!layer.contains(active)) {
+    if (!layer.contains(active as Node)) {
         first.focus();
         event.preventDefault();
         return true;
@@ -201,7 +223,7 @@ function trapFocusInActiveOverlay(event) {
     return false;
 }
 
-function handleGlobalKeydown(event) {
+function handleGlobalKeydown(event: KeyboardEvent): void {
     if (trapFocusInActiveOverlay(event)) return;
     if (event.key !== 'Escape') return;
 
@@ -252,7 +274,7 @@ function handleGlobalKeydown(event) {
     }
 }
 
-const bootText = [
+const bootText: string[] = [
     "BIOS Date 04/12/2077 14:32:01 Ver 7.0.4",
     "CPU: Kiroshi Optic-Core 9.2GHz",
     "Memory Test: 1048576K OK",
@@ -268,11 +290,11 @@ const bootText = [
 ];
 
 // --- UTILITY ---
-function clearAllTimeouts() { activeTimeouts.forEach(clearTimeout); activeTimeouts = []; }
-function schedule(fn, delay) { const id = setTimeout(fn, delay); activeTimeouts.push(id); return id; }
+function clearAllTimeouts(): void { activeTimeouts.forEach(clearTimeout); activeTimeouts = []; }
+function schedule(fn: () => void, delay: number): number { const id = setTimeout(fn, delay); activeTimeouts.push(id); return id; }
 
 // --- THEME ---
-function changeTheme(key) {
+function changeTheme(key: ThemeKey): void {
     const t = themes[key]; if (!t) return;
     currentThemeKey = key;
     document.documentElement.style.setProperty('--primary', t.ui);
@@ -282,42 +304,42 @@ function changeTheme(key) {
 }
 
 // --- LIGHT / DARK MODE ---
-let isLightMode = false;
-function toggleLightMode() {
+let isLightMode: boolean = false;
+function toggleLightMode(): void {
     isLightMode = !isLightMode;
     document.body.classList.toggle('light-mode', isLightMode);
-    const icon = document.getElementById('mode-icon');
+    const icon = document.getElementById('mode-icon') as HTMLSpanElement | null;
     if (icon) icon.innerHTML = isLightMode ? '&#9788;' : '&#9790;';
 }
 
 // --- BUG REPORT ---
-let bugReportOpen = false;
+let bugReportOpen: boolean = false;
 
-function isBugReportDirty() {
-    const title = document.getElementById('bug-report-title');
-    const desc = document.getElementById('bug-report-desc');
-    return (title && title.value.length > 0) || (desc && desc.value.length > 0);
+function isBugReportDirty(): boolean {
+    const title = document.getElementById('bug-report-title') as HTMLInputElement | null;
+    const desc = document.getElementById('bug-report-desc') as HTMLTextAreaElement | null;
+    return (title != null && title.value.length > 0) || (desc != null && desc.value.length > 0);
 }
 
-function openBugReport() {
+function openBugReport(): void {
     if (bugReportOpen) return;
 
     // Close side panels if open (Particle Lab / Bee Sim controls)
-    const plabCtrl = document.getElementById('plab-controls');
+    const plabCtrl = document.getElementById('plab-controls') as HTMLDivElement | null;
     if (plabCtrl && !plabCtrl.classList.contains('collapsed')) {
         plabCtrl.classList.add('collapsed');
     }
-    const beeCtrl = document.getElementById('beesim-controls');
+    const beeCtrl = document.getElementById('beesim-controls') as HTMLDivElement | null;
     if (beeCtrl && !beeCtrl.classList.contains('collapsed')) {
         beeCtrl.classList.add('collapsed');
     }
 
-    const panel = document.getElementById('bug-report-panel');
-    const btn = document.getElementById('bug-report-btn');
+    const panel = document.getElementById('bug-report-panel') as HTMLDivElement | null;
+    const btn = document.getElementById('bug-report-btn') as HTMLButtonElement | null;
     if (!panel) return;
     panel.style.display = 'flex';
     // Force reflow for transition
-    panel.offsetHeight;
+    void panel.offsetHeight;
     panel.classList.add('open');
     if (btn) btn.classList.add('active');
     bugReportOpen = true;
@@ -327,9 +349,9 @@ function openBugReport() {
     updateBugCharCount('bug-report-desc', 'bug-desc-count', 250);
 }
 
-function closeBugReport() {
-    const panel = document.getElementById('bug-report-panel');
-    const btn = document.getElementById('bug-report-btn');
+function closeBugReport(): void {
+    const panel = document.getElementById('bug-report-panel') as HTMLDivElement | null;
+    const btn = document.getElementById('bug-report-btn') as HTMLButtonElement | null;
     if (!panel) return;
 
     // Remove confirm overlay if present
@@ -341,8 +363,8 @@ function closeBugReport() {
     bugReportOpen = false;
 
     // Clear fields
-    const title = document.getElementById('bug-report-title');
-    const desc = document.getElementById('bug-report-desc');
+    const title = document.getElementById('bug-report-title') as HTMLInputElement | null;
+    const desc = document.getElementById('bug-report-desc') as HTMLTextAreaElement | null;
     if (title) title.value = '';
     if (desc) desc.value = '';
     updateBugCharCount('bug-report-title', 'bug-title-count', 60);
@@ -354,7 +376,7 @@ function closeBugReport() {
     }, 350);
 }
 
-function cancelBugReport() {
+function cancelBugReport(): void {
     if (isBugReportDirty()) {
         showBugReportConfirm();
     } else {
@@ -362,8 +384,8 @@ function cancelBugReport() {
     }
 }
 
-function showBugReportConfirm() {
-    const panel = document.getElementById('bug-report-panel');
+function showBugReportConfirm(): void {
+    const panel = document.getElementById('bug-report-panel') as HTMLDivElement | null;
     if (!panel || panel.querySelector('.bug-report-confirm')) return;
 
     const overlay = document.createElement('div');
@@ -377,15 +399,15 @@ function showBugReportConfirm() {
     `;
     panel.appendChild(overlay);
 
-    overlay.querySelector('#bug-confirm-discard').addEventListener('click', () => {
+    (overlay.querySelector('#bug-confirm-discard') as HTMLButtonElement).addEventListener('click', () => {
         closeBugReport();
     });
-    overlay.querySelector('#bug-confirm-keep').addEventListener('click', () => {
+    (overlay.querySelector('#bug-confirm-keep') as HTMLButtonElement).addEventListener('click', () => {
         overlay.remove();
     });
 }
 
-function toggleBugReport() {
+function toggleBugReport(): void {
     if (!isPowerOn || !osIsActive) return;
     if (bugReportOpen) {
         cancelBugReport();
@@ -394,17 +416,17 @@ function toggleBugReport() {
     }
 }
 
-function updateBugCharCount(inputId, countId, max) {
-    const input = document.getElementById(inputId);
-    const counter = document.getElementById(countId);
+function updateBugCharCount(inputId: string, countId: string, max: number): void {
+    const input = document.getElementById(inputId) as HTMLInputElement | HTMLTextAreaElement | null;
+    const counter = document.getElementById(countId) as HTMLSpanElement | null;
     if (input && counter) {
         counter.textContent = input.value.length + ' / ' + max;
     }
 }
 
-function bindBugReportInputs() {
-    const title = document.getElementById('bug-report-title');
-    const desc = document.getElementById('bug-report-desc');
+function bindBugReportInputs(): void {
+    const title = document.getElementById('bug-report-title') as HTMLInputElement | null;
+    const desc = document.getElementById('bug-report-desc') as HTMLTextAreaElement | null;
     if (title) {
         title.addEventListener('input', () => updateBugCharCount('bug-report-title', 'bug-title-count', 60));
     }
@@ -414,12 +436,12 @@ function bindBugReportInputs() {
 }
 
 // --- PROTOCOL ---
-function changeProtocol(proto) {
+function changeProtocol(proto: string): void {
     currentProtocol = proto;
 
-    const iceEl = document.getElementById('ice-status');
-    const sentEl = document.getElementById('sentinel-status');
-    const stealthEl = document.getElementById('stealth-status');
+    const iceEl = document.getElementById('ice-status') as HTMLSpanElement | null;
+    const sentEl = document.getElementById('sentinel-status') as HTMLSpanElement | null;
+    const stealthEl = document.getElementById('stealth-status') as HTMLSpanElement | null;
 
     if (iceEl) { iceEl.textContent = 'STANDBY'; iceEl.className = 'status-standby'; }
     if (sentEl) { sentEl.textContent = 'STANDBY'; sentEl.className = 'status-standby'; }
@@ -437,7 +459,7 @@ function changeProtocol(proto) {
 }
 
 // --- POWER ---
-function togglePower() {
+function togglePower(): void {
     isPowerOn = !isPowerOn;
     if (powerSwitch) powerSwitch.setAttribute('aria-pressed', isPowerOn ? 'true' : 'false');
     if (isPowerOn) {
@@ -458,7 +480,7 @@ function togglePower() {
     }
 }
 
-function turnOff() {
+function turnOff(): void {
     clearAllTimeouts(); osIsActive = false;
     if (powerSwitch) powerSwitch.setAttribute('aria-pressed', 'false');
     layerOff.style.display = 'flex';
@@ -471,12 +493,12 @@ function turnOff() {
     swarmContainer.innerHTML = '';
     miniDisplay.innerHTML = '';
     asciiLogo.style.display = 'none';
-    document.getElementById('protocol-selector').value = 'standby';
+    (document.getElementById('protocol-selector') as HTMLSelectElement).value = 'standby';
     currentProtocol = 'standby';
 }
 
 // --- BOOT SEQUENCE ---
-function startBootSequence() {
+function startBootSequence(): void {
     layerOff.style.display = 'none';
     layerTerminal.style.display = 'flex';
 
@@ -499,7 +521,7 @@ function startBootSequence() {
 }
 
 // --- FLAME GENERATION ---
-function generateFlames(container, count, color, speedBase, z, hMin, hMax) {
+function generateFlames(container: HTMLElement, count: number, color: string, speedBase: number, z: number, hMin: number, hMax: number): void {
     for (let i = 0; i < count; i++) {
         const s = document.createElement('div');
         s.className = 'flame-shard';
@@ -515,7 +537,7 @@ function generateFlames(container, count, color, speedBase, z, hMin, hMax) {
 }
 
 // --- SWARM BOOT ---
-function startSwarmBoot() {
+function startSwarmBoot(): void {
     layerSwarm.style.display = 'block';
     swarmContainer.innerHTML = '';
     for (let i = 0; i < 80; i++) {
@@ -531,7 +553,7 @@ function startSwarmBoot() {
 }
 
 // --- MINI DISPLAY ---
-function startMiniDisplay() {
+function startMiniDisplay(): void {
     miniDisplay.innerHTML = '';
 
     if (currentProtocol === 'iceburn') {
@@ -569,7 +591,7 @@ function startMiniDisplay() {
 }
 
 // --- SHOW OS ---
-function showOS() {
+function showOS(): void {
     osIsActive = true;
     layerOs.style.display = 'flex';
     miniDisplay.classList.add('active');
@@ -579,17 +601,17 @@ function showOS() {
 
 // --- SYSTEM CLOCK ---
 setInterval(() => {
-    const el = document.getElementById('sys-time');
+    const el = document.getElementById('sys-time') as HTMLParagraphElement | null;
     if (el) el.innerText = `SYS.TIME: ${new Date().toLocaleTimeString()}`;
 }, 1000);
 
-let cancelSysMonBoot = null;
+let cancelSysMonBoot: (() => void) | null = null;
 
 // --- APP BOOT ANIMATION (shared helper) ---
-function appBootAnimation(loadingEl, textEl, lines, onComplete) {
+function appBootAnimation(loadingEl: HTMLElement, textEl: HTMLElement, lines: string[], onComplete: () => void): () => void {
     let cancelled = false;
-    const localTimeouts = [];
-    const localSetTimeout = (fn, delay) => {
+    const localTimeouts: number[] = [];
+    const localSetTimeout = (fn: () => void, delay: number): number => {
         const id = setTimeout(() => {
             if (!cancelled) fn();
         }, delay);
@@ -630,18 +652,18 @@ function appBootAnimation(loadingEl, textEl, lines, onComplete) {
 }
 
 // --- SYS MON APP ---
-const sysmonBootLines = [
+const sysmonBootLines: string[] = [
     "> EXEC sys_monitor.exe",
     "> POLLING HARDWARE INTERFACES...",
     "> LOADING PROCESS TABLE...",
     "> SENSORS ONLINE."
 ];
 
-function launchSysMon() {
-    const layer = document.getElementById('layer-sysmon');
-    const loading = document.getElementById('sysmon-loading');
-    const textEl = document.getElementById('sysmon-loading-text');
-    const app = document.getElementById('sysmon-app');
+function launchSysMon(): void {
+    const layer = document.getElementById('layer-sysmon') as HTMLDivElement;
+    const loading = document.getElementById('sysmon-loading') as HTMLDivElement;
+    const textEl = document.getElementById('sysmon-loading-text') as HTMLDivElement;
+    const app = document.getElementById('sysmon-app') as HTMLDivElement;
 
     rememberFocusForLayer('layer-sysmon');
     layer.style.display = 'flex';
@@ -659,28 +681,28 @@ function launchSysMon() {
     });
 }
 
-function closeSysMon() {
+function closeSysMon(): void {
     if (cancelSysMonBoot) {
         cancelSysMonBoot();
         cancelSysMonBoot = null;
     }
-    document.getElementById('layer-sysmon').style.display = 'none';
+    (document.getElementById('layer-sysmon') as HTMLDivElement).style.display = 'none';
     restoreFocusForLayer('layer-sysmon');
 }
 
 // --- PLACEHOLDER APP ---
-function showPlaceholder(name) {
+function showPlaceholder(name: string): void {
     rememberFocusForLayer('layer-placeholder');
-    document.getElementById('placeholder-name').textContent = name;
-    document.getElementById('layer-placeholder').style.display = 'block';
+    (document.getElementById('placeholder-name') as HTMLDivElement).textContent = name;
+    (document.getElementById('layer-placeholder') as HTMLDivElement).style.display = 'block';
 }
-function closePlaceholder() {
-    document.getElementById('layer-placeholder').style.display = 'none';
+function closePlaceholder(): void {
+    (document.getElementById('layer-placeholder') as HTMLDivElement).style.display = 'none';
     restoreFocusForLayer('layer-placeholder');
 }
 
 bindCoreInteractions();
 bindBugReportInputs();
 
-window.rememberFocusForLayer = rememberFocusForLayer;
-window.restoreFocusForLayer = restoreFocusForLayer;
+(window as unknown as Record<string, unknown>).rememberFocusForLayer = rememberFocusForLayer;
+(window as unknown as Record<string, unknown>).restoreFocusForLayer = restoreFocusForLayer;
