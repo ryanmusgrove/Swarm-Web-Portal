@@ -1,17 +1,70 @@
 // ── Honey Bee Colony Simulation ──
 // Integrated into Cyberdeck OS framework
 
-const beeCanvas = document.getElementById('beeSimCanvas');
-const beeCtx = beeCanvas.getContext('2d');
-const beeWrap = document.getElementById('beesim-canvas-wrap');
-const beeLayer = document.getElementById('layer-beesim');
-const beeAppEl = document.getElementById('beesim-app');
-const beeLoadingEl = document.getElementById('beesim-loading');
-const beeLoadingText = document.getElementById('beesim-loading-text');
+// --- External functions (defined in sibling scripts) ---
+declare function appBootAnimation(loadingEl: HTMLElement, textEl: HTMLElement, lines: string[], onComplete: () => void): () => void;
+declare function rememberFocusForLayer(layerId: string): void;
+declare function restoreFocusForLayer(layerId: string): void;
 
-let beeSimActive = false;
-let beeAnimId = null;
-let cancelBeeSimBoot = null;
+// --- Types ---
+type BeeState = 'foraging' | 'sleeping' | 'collecting' | 'returning';
+type BeeParticleType = 'honey' | 'pollen';
+
+interface Flower {
+    x: number;
+    y: number;
+    nectar: number;
+    maxNectar: number;
+    regen: number;
+    size: number;
+    hue: number;
+    petals: number;
+    phase: number;
+}
+
+interface HoneycombCell {
+    q: number;
+    r: number;
+    x: number;
+    y: number;
+    beeIndex: number;
+    honey: number;
+}
+
+interface BeeParticle {
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    life: number;
+    maxLife: number;
+    size: number;
+    type: BeeParticleType;
+}
+
+interface BeeMouse {
+    x: number;
+    y: number;
+    active: boolean;
+    repel: boolean;
+}
+
+interface BeeSliderEntry {
+    el: HTMLInputElement;
+    readonly value: number;
+}
+
+const beeCanvas = document.getElementById('beeSimCanvas') as HTMLCanvasElement;
+const beeCtx = beeCanvas.getContext('2d') as CanvasRenderingContext2D;
+const beeWrap = document.getElementById('beesim-canvas-wrap') as HTMLDivElement;
+const beeLayer = document.getElementById('layer-beesim') as HTMLDivElement;
+const beeAppEl = document.getElementById('beesim-app') as HTMLDivElement;
+const beeLoadingEl = document.getElementById('beesim-loading') as HTMLDivElement;
+const beeLoadingText = document.getElementById('beesim-loading-text') as HTMLDivElement;
+
+let beeSimActive: boolean = false;
+let beeAnimId: number | null = null;
+let cancelBeeSimBoot: (() => void) | null = null;
 
 const BEE_NUM = 75;
 const BEE_HEX_SIZE = 13;
@@ -19,45 +72,45 @@ const BEE_HEX_RADIUS = 5;
 const BEE_FOV_ANGLE = Math.PI * 0.75;
 const BEE_MAX_COLLECTORS = 4;
 
-let beeW, beeH;
+let beeW: number, beeH: number;
 
 // ── Sliders ──
-const beeSliders = {};
+const beeSliders = {} as Record<string, BeeSliderEntry>;
 ['bee-cohesion','bee-alignment','bee-separation','bee-speed','bee-vision'].forEach(id => {
-    const el = document.getElementById(id);
-    const v = document.getElementById(id + 'Val');
+    const el = document.getElementById(id) as HTMLInputElement;
+    const v = document.getElementById(id + 'Val') as HTMLElement;
     const key = id.replace('bee-', '');
     beeSliders[key] = { el, get value(){ return +el.value; } };
-    el.addEventListener('input', () => v.textContent = el.value);
+    el.addEventListener('input', () => { v.textContent = el.value; });
 });
-const beeShowVisionCb = document.getElementById('bee-showVision');
+const beeShowVisionCb = document.getElementById('bee-showVision') as HTMLInputElement;
 
 // ── Mouse ──
-let beeMouse = { x: -9999, y: -9999, active: false, repel: false };
-beeCanvas.addEventListener('mousemove', e => {
+let beeMouse: BeeMouse = { x: -9999, y: -9999, active: false, repel: false };
+beeCanvas.addEventListener('mousemove', (e: MouseEvent) => {
     const r = beeCanvas.getBoundingClientRect();
     beeMouse.x = e.clientX - r.left;
     beeMouse.y = e.clientY - r.top;
 });
-beeCanvas.addEventListener('mousedown', e => { e.preventDefault(); beeMouse.active = true; beeMouse.repel = e.button === 2; });
+beeCanvas.addEventListener('mousedown', (e: MouseEvent) => { e.preventDefault(); beeMouse.active = true; beeMouse.repel = e.button === 2; });
 beeCanvas.addEventListener('mouseup', () => { beeMouse.active = false; });
-beeCanvas.addEventListener('contextmenu', e => e.preventDefault());
-beeCanvas.addEventListener('touchstart', e => {
+beeCanvas.addEventListener('contextmenu', (e: Event) => e.preventDefault());
+beeCanvas.addEventListener('touchstart', (e: TouchEvent) => {
     const t = e.touches[0]; const r = beeCanvas.getBoundingClientRect();
     beeMouse.x = t.clientX - r.left; beeMouse.y = t.clientY - r.top; beeMouse.active = true;
 }, {passive:true});
-beeCanvas.addEventListener('touchmove', e => {
+beeCanvas.addEventListener('touchmove', (e: TouchEvent) => {
     const t = e.touches[0]; const r = beeCanvas.getBoundingClientRect();
     beeMouse.x = t.clientX - r.left; beeMouse.y = t.clientY - r.top;
 }, {passive:true});
 beeCanvas.addEventListener('touchend', () => { beeMouse.active = false; });
 
-function beeD2(a, b) { const dx = a.x - b.x, dy = a.y - b.y; return dx*dx + dy*dy; }
-function beeDst(a, b) { return Math.sqrt(beeD2(a, b)); }
+function beeD2(a: { x: number; y: number }, b: { x: number; y: number }): number { const dx = a.x - b.x, dy = a.y - b.y; return dx*dx + dy*dy; }
+function beeDst(a: { x: number; y: number }, b: { x: number; y: number }): number { return Math.sqrt(beeD2(a, b)); }
 
 // ── Particles ──
-let beeParticles = [];
-function beeSpawnP(x, y, type) {
+let beeParticles: BeeParticle[] = [];
+function beeSpawnP(x: number, y: number, type: BeeParticleType): void {
     if (beeParticles.length > 400) return;
     beeParticles.push({
         x, y,
@@ -69,7 +122,7 @@ function beeSpawnP(x, y, type) {
         type
     });
 }
-function beeUpdateParticles() {
+function beeUpdateParticles(): void {
     for (let i = beeParticles.length - 1; i >= 0; i--) {
         const p = beeParticles[i];
         p.x += p.vx; p.y += p.vy;
@@ -77,7 +130,7 @@ function beeUpdateParticles() {
         if (--p.life <= 0) beeParticles.splice(i, 1);
     }
 }
-function beeDrawParticles() {
+function beeDrawParticles(): void {
     for (const p of beeParticles) {
         const a = p.life / p.maxLife;
         beeCtx.fillStyle = p.type === 'honey'
@@ -90,11 +143,11 @@ function beeDrawParticles() {
 }
 
 // ── Honeycomb ──
-let beeCells = [];
-let beeCombCenter = { x: 0, y: 0 };
-let beeTotalHoney = 0;
+let beeCells: HoneycombCell[] = [];
+let beeCombCenter: { x: number; y: number } = { x: 0, y: 0 };
+let beeTotalHoney: number = 0;
 
-function beeGenerateComb() {
+function beeGenerateComb(): void {
     beeCells = [];
     for (let q = -BEE_HEX_RADIUS; q <= BEE_HEX_RADIUS; q++) {
         const r1 = Math.max(-BEE_HEX_RADIUS, -q - BEE_HEX_RADIUS);
@@ -107,7 +160,7 @@ function beeGenerateComb() {
     for (let i = BEE_NUM; i < beeCells.length; i++) beeCells[i].honey = 0.4 + Math.random() * 0.6;
 }
 
-function beeUpdateCombPos() {
+function beeUpdateCombPos(): void {
     const span = BEE_HEX_SIZE * BEE_HEX_RADIUS * 1.8;
     if (beeW < 600) { beeCombCenter.x = beeW / 2; beeCombCenter.y = span + 20; }
     else { beeCombCenter.x = beeW - span - 35; beeCombCenter.y = span + 45; }
@@ -117,7 +170,7 @@ function beeUpdateCombPos() {
     }
 }
 
-function beeHexPath(cx, cy, s) {
+function beeHexPath(cx: number, cy: number, s: number): void {
     beeCtx.beginPath();
     for (let i = 0; i < 6; i++) {
         const a = Math.PI / 3 * i;
@@ -127,7 +180,7 @@ function beeHexPath(cx, cy, s) {
     beeCtx.closePath();
 }
 
-function beeDrawComb(time) {
+function beeDrawComb(time: number): void {
     const gr = BEE_HEX_SIZE * (BEE_HEX_RADIUS + 3) * 1.7;
     const glow = beeCtx.createRadialGradient(beeCombCenter.x, beeCombCenter.y, gr * 0.15, beeCombCenter.x, beeCombCenter.y, gr);
     glow.addColorStop(0, 'rgba(255,170,40,0.12)');
@@ -181,7 +234,7 @@ function beeDrawComb(time) {
     beeCtx.fillText(`Honey: ${beeTotalHoney.toFixed(1)} · Flying ${fo} · Collecting ${co} · Returning ${rt} · Sleeping ${sl}`, beeCombCenter.x, ly);
 }
 
-function beeDrawSleepingBee(cx, cy, bee, time) {
+function beeDrawSleepingBee(cx: number, cy: number, bee: SimBee, time: number): void {
     beeCtx.save();
     beeCtx.translate(cx, cy);
     const g = beeCtx.createLinearGradient(-4, 0, 4, 0);
@@ -219,9 +272,9 @@ function beeDrawSleepingBee(cx, cy, bee, time) {
 }
 
 // ── Flowers ──
-let beeFlowers = [];
+let beeFlowers: Flower[] = [];
 
-function beeGenerateFlowers() {
+function beeGenerateFlowers(): void {
     beeFlowers = [];
     const n = Math.max(7, Math.min(14, Math.floor(beeW * beeH / 75000)));
     for (let i = 0; i < n; i++) {
@@ -243,13 +296,13 @@ function beeGenerateFlowers() {
     }
 }
 
-function beeUpdateFlowers() {
+function beeUpdateFlowers(): void {
     for (const f of beeFlowers) {
         if (f.nectar < f.maxNectar) f.nectar = Math.min(f.maxNectar, f.nectar + f.regen);
     }
 }
 
-function beeDrawFlowers(time) {
+function beeDrawFlowers(time: number): void {
     for (const f of beeFlowers) {
         const nP = f.nectar / f.maxNectar;
         beeCtx.save();
@@ -309,7 +362,28 @@ function beeDrawFlowers(time) {
 
 // ── Bee Class ──
 class SimBee {
-    constructor(i) {
+    index: number;
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    wingPhase: number;
+    wobble: number;
+    stamina: number;
+    maxStamina: number;
+    drainRate: number;
+    rechargeRate: number;
+    tiredAt: number;
+    wakeAt: number;
+    state: BeeState;
+    cellIndex: number;
+    sleepTimer: number;
+    cargo: number;
+    targetFlower: Flower | null;
+    collectTimer: number;
+    collectDuration: number;
+
+    constructor(i: number) {
         this.index = i;
         this.x = 100 + Math.random() * 400;
         this.y = 100 + Math.random() * 300;
@@ -335,9 +409,9 @@ class SimBee {
         this.collectDuration = 65 + Math.random() * 50;
     }
 
-    get cell() { return this.cellIndex >= 0 ? beeCells[this.cellIndex] : null; }
+    get cell(): HoneycombCell | null { return this.cellIndex >= 0 ? beeCells[this.cellIndex] : null; }
 
-    canSee(other) {
+    canSee(other: SimBee): boolean {
         const dx = other.x - this.x, dy = other.y - this.y;
         const dd = dx * dx + dy * dy;
         const vr = beeSliders.vision.value;
@@ -349,7 +423,7 @@ class SimBee {
         return Math.abs(diff) < BEE_FOV_ANGLE;
     }
 
-    update(all, time) {
+    update(all: SimBee[], time: number): void {
         if (this.state === 'sleeping') {
             this.sleepTimer++;
             this.stamina = Math.min(this.maxStamina, this.stamina + this.rechargeRate);
@@ -482,8 +556,8 @@ class SimBee {
         this.stamina = Math.max(0, this.stamina);
     }
 
-    seekFlower() {
-        let best = null, bestScore = -Infinity;
+    seekFlower(): void {
+        let best: Flower | null = null, bestScore = -Infinity;
         for (const f of beeFlowers) {
             if (f.nectar < 0.4) continue;
             const d = beeDst(this, f);
@@ -500,7 +574,7 @@ class SimBee {
         }
     }
 
-    applyBoids(all) {
+    applyBoids(all: SimBee[]): void {
         const cF = beeSliders.cohesion.value / 1000;
         const aF = beeSliders.alignment.value / 1000;
         const sF = beeSliders.separation.value / 100;
@@ -522,7 +596,7 @@ class SimBee {
         }
     }
 
-    applySep(all, str) {
+    applySep(all: SimBee[], str: number): void {
         const sF = beeSliders.separation.value / 100 * str;
         let sx = 0, sy = 0;
         for (const o of all) {
@@ -534,7 +608,7 @@ class SimBee {
         this.vx += sx * sF; this.vy += sy * sF;
     }
 
-    applyMouse() {
+    applyMouse(): void {
         if (!beeMouse.active) return;
         const dx = beeMouse.x - this.x, dy = beeMouse.y - this.y;
         const d = Math.sqrt(dx*dx + dy*dy);
@@ -544,7 +618,7 @@ class SimBee {
         }
     }
 
-    draw(time) {
+    draw(time: number): void {
         if (this.state === 'sleeping') return;
         const heading = Math.atan2(this.vy, this.vx);
 
@@ -639,7 +713,7 @@ class SimBee {
 }
 
 // ── Background ──
-function beeDrawBg() {
+function beeDrawBg(): void {
     const bg = beeCtx.createRadialGradient(beeW*0.3, beeH*0.6, 50, beeW*0.5, beeH*0.5, beeW*0.8);
     bg.addColorStop(0, '#1e3a1e'); bg.addColorStop(0.5, '#142814'); bg.addColorStop(1, '#0a150a');
     beeCtx.fillStyle = bg; beeCtx.fillRect(0, 0, beeW, beeH);
@@ -652,10 +726,10 @@ function beeDrawBg() {
 }
 
 // ── Init & Loop ──
-let beeSwarm = [];
-let beeTime = 0;
+let beeSwarm: SimBee[] = [];
+let beeTime: number = 0;
 
-function beeSimInit() {
+function beeSimInit(): void {
     beeW = beeCanvas.width = beeWrap.offsetWidth;
     beeH = beeCanvas.height = beeWrap.offsetHeight;
     beeGenerateComb();
@@ -683,7 +757,7 @@ function beeSimInit() {
     beeTime = 0;
 }
 
-function beeSimResize() {
+function beeSimResize(): void {
     beeW = beeCanvas.width = beeWrap.offsetWidth;
     beeH = beeCanvas.height = beeWrap.offsetHeight;
     beeUpdateCombPos();
@@ -695,7 +769,7 @@ function beeSimResize() {
     }
 }
 
-function beeSimLoop() {
+function beeSimLoop(): void {
     if (!beeSimActive) return;
     beeDrawBg();
     beeUpdateFlowers();
@@ -719,7 +793,7 @@ function beeSimLoop() {
 }
 
 // ── Boot Lines ──
-const beeSimBootLines = [
+const beeSimBootLines: string[] = [
     "> EXEC bee_colony.exe",
     "> SPAWNING AGENTS...",
     "> GENERATING FLORA GRID...",
@@ -727,7 +801,7 @@ const beeSimBootLines = [
 ];
 
 // ── Launch / Close ──
-function launchBeeSim() {
+function launchBeeSim(): void {
     if (typeof rememberFocusForLayer === 'function') rememberFocusForLayer('layer-beesim');
     beeLayer.style.display = 'flex';
     beeAppEl.style.display = 'none';
@@ -748,7 +822,7 @@ function launchBeeSim() {
     });
 }
 
-function closeBeeSim() {
+function closeBeeSim(): void {
     if (cancelBeeSimBoot) {
         cancelBeeSimBoot();
         cancelBeeSimBoot = null;
@@ -760,8 +834,8 @@ function closeBeeSim() {
     if (typeof restoreFocusForLayer === 'function') restoreFocusForLayer('layer-beesim');
 }
 
-function toggleBeeSimControls() {
-    document.getElementById('beesim-controls').classList.toggle('collapsed');
+function toggleBeeSimControls(): void {
+    (document.getElementById('beesim-controls') as HTMLDivElement).classList.toggle('collapsed');
 }
 
 window.addEventListener('resize', () => { if (beeSimActive) beeSimResize(); });
