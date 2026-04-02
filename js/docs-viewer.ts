@@ -1138,3 +1138,7 @@ function closeDocsViewer(): void {
     (document.getElementById('layer-docs-viewer') as HTMLDivElement).style.display = 'none';
     if (typeof restoreFocusForLayer === 'function') restoreFocusForLayer('layer-docs-viewer');
 }
+
+// Expose to global scope for inline HTML handlers and cross-file calls
+(window as any).launchDocsViewer = launchDocsViewer;
+(window as any).closeDocsViewer = closeDocsViewer;

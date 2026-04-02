@@ -2,6 +2,13 @@
 // CYBERDECK OS - Core System
 // ==========================================
 
+interface BugReportPayload {
+    title: string;
+    description: string;
+    engineVersion: string;
+    gpuInfo: string;
+}
+
 // --- External functions (defined in sibling scripts) ---
 declare function closeParticleLab(): void;
 declare function closeResourceRouter(): void;
@@ -435,6 +442,50 @@ function bindBugReportInputs(): void {
     }
 }
 
+async function submitBugReport(): Promise<void> {
+    const titleEl = document.getElementById('bug-report-title') as HTMLInputElement;
+    const descEl = document.getElementById('bug-report-desc') as HTMLTextAreaElement;
+    const sendBtn = document.getElementById('bug-report-send') as HTMLButtonElement;
+
+    if (!titleEl.value.trim() || !descEl.value.trim()) return;
+
+    sendBtn.textContent = 'UPLINKING...';
+    sendBtn.disabled = true;
+
+    const payload: BugReportPayload = {
+        title: titleEl.value.trim(),
+        description: descEl.value.trim(),
+        engineVersion: 'v7.0.4',
+        gpuInfo: 'WebGL 2.0'
+    };
+
+    try {
+        const res = await fetch('/api/report-bug', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error('Uplink failed');
+        const data = await res.json();
+        titleEl.value = '';
+        descEl.value =
+            '╔══════════════════════════════════╗\n' +
+            '║  BUG REPORT UPLINKED             ║\n' +
+            '╠══════════════════════════════════╣\n' +
+            '║  TICKET ID: ' + data.id + '\n' +
+            '║  STATUS: ACKNOWLEDGED            ║\n' +
+            '║  ROUTE: SWARM CENTRAL            ║\n' +
+            '╚══════════════════════════════════╝';
+        titleEl.disabled = true;
+        descEl.disabled = true;
+    } catch {
+        descEl.value = '[ ERR :: UPLINK FAILED ]\n> Bug report transmission interrupted.\n> Please retry or contact your operator.';
+    } finally {
+        sendBtn.textContent = 'SEND';
+        sendBtn.disabled = false;
+    }
+}
+
 // --- PROTOCOL ---
 function changeProtocol(proto: string): void {
     currentProtocol = proto;
@@ -704,5 +755,24 @@ function closePlaceholder(): void {
 bindCoreInteractions();
 bindBugReportInputs();
 
-(window as unknown as Record<string, unknown>).rememberFocusForLayer = rememberFocusForLayer;
-(window as unknown as Record<string, unknown>).restoreFocusForLayer = restoreFocusForLayer;
+(window as any).rememberFocusForLayer = rememberFocusForLayer;
+(window as any).restoreFocusForLayer = restoreFocusForLayer;
+
+// Inline HTML handlers
+(window as any).changeTheme = changeTheme;
+(window as any).toggleLightMode = toggleLightMode;
+(window as any).changeProtocol = changeProtocol;
+(window as any).toggleBugReport = toggleBugReport;
+(window as any).cancelBugReport = cancelBugReport;
+(window as any).closeSysMon = closeSysMon;
+(window as any).closeAppsFolder = closeAppsFolder;
+(window as any).closeDocsFolder = closeDocsFolder;
+(window as any).closePlaceholder = closePlaceholder;
+
+// Bug report submission
+(window as any).submitBugReport = submitBugReport;
+document.getElementById('bug-report-send')?.addEventListener('click', submitBugReport);
+
+// Cross-file calls
+(window as any).appBootAnimation = appBootAnimation;
+(window as any).launchSysMon = launchSysMon;

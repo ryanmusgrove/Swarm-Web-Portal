@@ -849,3 +849,8 @@ document.addEventListener('visibilitychange', () => {
     }
     if (!beeAnimId) beeSimLoop();
 });
+
+// Expose to global scope for inline HTML handlers and cross-file calls
+(window as any).launchBeeSim = launchBeeSim;
+(window as any).closeBeeSim = closeBeeSim;
+(window as any).toggleBeeSimControls = toggleBeeSimControls;

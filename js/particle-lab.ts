@@ -356,3 +356,8 @@ document.addEventListener('visibilitychange', () => {
     }
     if (!plabAnimId) plabAnimate();
 });
+
+// Expose to global scope for inline HTML handlers and cross-file calls
+(window as any).launchParticleLab = launchParticleLab;
+(window as any).closeParticleLab = closeParticleLab;
+(window as any).togglePlabControls = togglePlabControls;
