@@ -442,10 +442,20 @@ function bindBugReportInputs(): void {
     }
 }
 
+function getHardwareTelemetry(): string {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    if (!gl) return 'Unknown (WebGL unavailable)';
+    const ext = (gl as WebGLRenderingContext).getExtension('WEBGL_debug_renderer_info');
+    if (!ext) return 'Unknown (renderer info unavailable)';
+    return (gl as WebGLRenderingContext).getParameter(ext.UNMASKED_RENDERER_WEBGL) || 'Unknown';
+}
+
 async function submitBugReport(): Promise<void> {
     const titleEl = document.getElementById('bug-report-title') as HTMLInputElement;
     const descEl = document.getElementById('bug-report-desc') as HTMLTextAreaElement;
     const sendBtn = document.getElementById('bug-report-send') as HTMLButtonElement;
+    const telemetryToggle = document.getElementById('telemetry-toggle') as HTMLInputElement | null;
 
     if (!titleEl.value.trim() || !descEl.value.trim()) return;
 
@@ -456,7 +466,7 @@ async function submitBugReport(): Promise<void> {
         title: titleEl.value.trim(),
         description: descEl.value.trim(),
         engineVersion: 'v7.0.4',
-        gpuInfo: 'WebGL 2.0'
+        gpuInfo: telemetryToggle?.checked ? getHardwareTelemetry() : 'Opt-out'
     };
 
     try {
