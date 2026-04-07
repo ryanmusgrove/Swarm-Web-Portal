@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swarm Engine | Cyberdeck OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <script type="module" crossorigin src="/assets/index-0fOm-lwD.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-_He41su-.css">
+</head>
+<body>
+
+<div class="screen-container">
+    <div class="scanlines"></div>
+
+    <!-- OFF -->
+    <div id="layer-off" class="absolute inset-0 bg-black z-50 flex flex-col items-center justify-center">
+        <div class="text-zinc-600 text-xl animate-pulse tracking-widest">SYSTEM OFFLINE</div>
+        <div class="text-zinc-700 text-sm mt-2">ENGAGE MAIN POWER TO INITIALIZE</div>
+    </div>
+
+    <!-- Terminal Boot -->
+    <div id="layer-terminal" class="absolute inset-0 p-4 md:p-8 z-10" style="display:none; flex-direction:column;">
+        <pre id="ascii-logo" class="text-theme ascii-logo" style="display:none;">
+        ________
+        __  ___/__      _______ ______________ ___
+        _____ \__ | /| / /  __ `/_  ___/_  __ `__ \
+        ____/ /__ |/ |/ // /_/ /_  /   _  / / / / /
+        /____/ ____/|__/ \__,_/ /_/    /_/ /_/ /_/
+
+██████ ▄▄  ▄▄  ▄▄▄▄ ▄▄ ▄▄  ▄▄ ▄▄▄▄▄
+██▄▄   ███▄██ ██ ▄▄ ██ ███▄██ ██▄▄
+██▄▄▄▄ ██ ▀██ ▀███▀ ██ ██ ▀██ ██▄▄▄ </pre>
+        <div class="flex items-center gap-2 mb-4 text-lg md:text-xl font-bold border-b border-theme pb-2 text-theme">
+            <span>> SWARM_OS v7.0.4</span>
+        </div>
+        <div id="terminal-text" class="space-y-1 mb-4 text-xs md:text-sm text-theme"></div>
+        <div id="loading-bar-container" class="w-full max-w-md mt-4" style="display:none;">
+            <div class="text-xs mb-1 text-theme">SYSTEM LOAD</div>
+            <div class="h-4 w-full border border-theme p-0.5">
+                <div class="h-full bg-theme animate-load"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bee Swarm Boot -->
+    <div id="layer-swarm" class="absolute inset-0 z-20 bg-black overflow-hidden" style="display:none;">
+        <div class="absolute inset-0 flex items-center justify-center z-50 pointer-events-none">
+            <h1 class="text-4xl md:text-7xl font-black text-yellow-500 tracking-widest text-center opacity-80 animate-pulse">SWARM<br/>DEPLOYED</h1>
+        </div>
+        <div id="swarm-container" class="absolute inset-0"></div>
+    </div>
+
+    <!-- OS Desktop -->
+    <div id="layer-os" class="absolute inset-0 bg-zinc-950 p-4 md:p-5 overflow-y-auto" style="display:none; flex-direction:column; z-index:30;">
+        <header class="flex flex-col md:flex-row justify-between md:items-center border-b border-theme pb-3 mb-4 gap-2 flex-shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-theme-dim border border-theme flex items-center justify-center rounded text-xl">🐝</div>
+                <div>
+                    <h2 class="text-xl md:text-2xl font-bold text-theme m-0 leading-none">SWARM_NET ACTIVE</h2>
+                    <span class="text-xs opacity-70 text-theme">HIVE CONNECTION: SECURE // PING: 4ms</span>
+                </div>
+            </div>
+            <div class="text-left md:text-right text-xs text-theme opacity-80">
+                <p id="sys-time">SYS.TIME: 00:00:00</p>
+                <p>LOC: HIVE_NODE_01</p>
+            </div>
+        </header>
+
+        <!-- App Tiles -->
+        <div class="mb-4 flex-shrink-0">
+            <div class="text-xs text-theme opacity-40 mb-2 uppercase tracking-widest">&#9656; Applications</div>
+            <div class="grid grid-cols-3 md:grid-cols-6 gap-3">
+                <button type="button" class="app-tile" data-app-action="apps-folder" aria-label="Open Apps folder">
+                    <div class="app-tile-icon">&#128193;</div>
+                    <div class="text-xs text-theme">APPS</div>
+                </button>
+                <button type="button" class="app-tile" data-app-action="docs-folder" aria-label="Open Docs folder">
+                    <div class="app-tile-icon">&#128196;</div>
+                    <div class="text-xs text-theme">DOCS</div>
+                </button>
+                <button type="button" class="app-tile" data-app-action="crypt-vault" aria-label="Open Crypt Vault placeholder">
+                    <div class="app-tile-icon">&#128272;</div>
+                    <div class="text-xs text-theme">CRYPT<br>VAULT</div>
+                </button>
+                <button type="button" class="app-tile" data-app-action="sysmon" aria-label="Launch System Monitor">
+                    <div class="app-tile-icon">&#128202;</div>
+                    <div class="text-xs text-theme">SYS<br>MON</div>
+                </button>
+                <button type="button" class="app-tile" data-app-action="jack-in" aria-label="Open Jack In placeholder">
+                    <div class="app-tile-icon">&#128268;</div>
+                    <div class="text-xs text-theme">JACK<br>IN</div>
+                </button>
+                <button type="button" class="app-tile" data-app-action="resource-router" aria-label="Launch Resource Router">
+                    <div class="app-tile-icon">&#127760;</div>
+                    <div class="text-xs text-theme">RESOURCE<br>ROUTER</div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Engine Architecture Specs -->
+        <div class="flex-grow min-h-0">
+            <div class="text-xs text-theme opacity-40 mb-2 uppercase tracking-widest">&#9656; Architecture Specs</div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                <div class="border border-theme bg-theme-dim p-3 rounded">
+                    <h3 class="text-sm border-b border-theme pb-2 mb-2 text-theme font-bold">ZERO_ALLOCATION</h3>
+                    <p class="text-xs text-theme opacity-80">Strict memory discipline. Zero heap allocations in the hot path. All memory pre-allocated into contiguous linear arenas at boot.</p>
+                </div>
+                <div class="border border-theme bg-theme-dim p-3 rounded">
+                    <h3 class="text-sm border-b border-theme pb-2 mb-2 text-theme font-bold">DATA_ORIENTED</h3>
+                    <p class="text-xs text-theme opacity-80">64-byte aligned SIMD data layouts utilizing Structure of Arrays (SoA). Cache-line hygiene enforced for maximum AVX-512 throughput.</p>
+                </div>
+                <div class="border border-theme bg-theme-dim p-3 rounded">
+                    <h3 class="text-sm border-b border-theme pb-2 mb-2 text-theme font-bold">CONCURRENCY</h3>
+                    <p class="text-xs text-theme opacity-80">Lock-free MPSC job queues. Thread-safe execution without mutex stalls or context-switching overhead.</p>
+                </div>
+            </div>
+
+            <div class="text-xs text-theme opacity-40 mb-2 uppercase tracking-widest">&#9656; Deployment Targets</div>
+            <div class="space-y-2">
+                <div class="border-l-2 border-theme bg-theme-dim p-2 pl-3 rounded-r">
+                    <div class="flex items-start gap-2">
+                        <span class="text-xs text-theme font-bold whitespace-nowrap opacity-60">[TGT-01]</span>
+                        <div>
+                            <h4 class="text-xs text-theme font-bold">Agent-Based Modeling (ALife)</h4>
+                            <p class="text-xs text-theme opacity-60">10,000+ autonomous entities via SoA Vector Flow Fields without GC stutter.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="border-l-2 border-theme bg-theme-dim p-2 pl-3 rounded-r">
+                    <div class="flex items-start gap-2">
+                        <span class="text-xs text-theme font-bold whitespace-nowrap opacity-60">[TGT-02]</span>
+                        <div>
+                            <h4 class="text-xs text-theme font-bold">Live Audio-Visual (VJ) Decks</h4>
+                            <p class="text-xs text-theme opacity-60">Millions of particles to DX12 upload heap. Hardware-accelerated fluid metaballs and CRT post-processing.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="border-l-2 border-theme bg-theme-dim p-2 pl-3 rounded-r">
+                    <div class="flex items-start gap-2">
+                        <span class="text-xs text-theme font-bold whitespace-nowrap opacity-60">[TGT-03]</span>
+                        <div>
+                            <h4 class="text-xs text-theme font-bold">Diegetic AI Workspaces</h4>
+                            <p class="text-xs text-theme opacity-60">Terminal-based OS layer natively integrating local inference workflows.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Apps Folder Overlay -->
+    <div id="layer-apps-folder" class="absolute inset-0" style="z-index:34; display:none;">
+        <div class="folder-overlay">
+            <div class="folder-header">
+                <span class="text-theme" style="font-size:0.85rem; font-weight:bold; letter-spacing:2px;">&#128193; APPS</span>
+                <button class="plab-topbar-btn" onclick="closeAppsFolder()">&#10005; CLOSE</button>
+            </div>
+            <div class="folder-grid">
+                <button type="button" class="app-tile" data-folder-app="particle-lab" aria-label="Launch Particle Lab">
+                    <div class="app-tile-icon">&#9883;</div>
+                    <div class="text-xs text-theme">PARTICLE<br>LAB</div>
+                </button>
+                <button type="button" class="app-tile" data-folder-app="bee-sim" aria-label="Launch Honey Bee Simulation">
+                    <div class="app-tile-icon">&#128029;</div>
+                    <div class="text-xs text-theme">BEE<br>SIM</div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Docs Folder Overlay -->
+    <div id="layer-docs-folder" class="absolute inset-0" style="z-index:34; display:none;">
+        <div class="folder-overlay">
+            <div class="folder-header">
+                <span class="text-theme" style="font-size:0.85rem; font-weight:bold; letter-spacing:2px;">&#128196; DOCS</span>
+                <button class="plab-topbar-btn" onclick="closeDocsFolder()">&#10005; CLOSE</button>
+            </div>
+            <div class="folder-grid folder-grid-3">
+                <button type="button" class="app-tile" data-folder-doc="overview" aria-label="Open System Overview">
+                    <div class="app-tile-icon">&#128203;</div>
+                    <div class="text-xs text-theme">SYSTEM<br>OVERVIEW</div>
+                </button>
+                <button type="button" class="app-tile" data-folder-doc="particle-lab" aria-label="Open Particle Lab Docs">
+                    <div class="app-tile-icon">&#9883;</div>
+                    <div class="text-xs text-theme">PARTICLE<br>LAB</div>
+                </button>
+                <button type="button" class="app-tile" data-folder-doc="bee-sim" aria-label="Open Bee Sim Docs">
+                    <div class="app-tile-icon">&#128029;</div>
+                    <div class="text-xs text-theme">BEE<br>SIM</div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Particle Lab App -->
+    <div id="layer-particle-lab" class="absolute inset-0 bg-black" style="z-index:35; display:none; flex-direction:column;">
+        <div id="plab-loading" class="plab-loading-screen">
+            <div id="plab-loading-text"></div>
+        </div>
+        <div id="plab-app" style="display:none; flex-direction:column; flex:1; min-height:0;">
+            <div class="plab-topbar">
+                <button class="plab-topbar-btn" onclick="closeParticleLab()">&#8592; EXIT</button>
+                <span class="text-theme" style="font-size:0.85rem; font-weight:bold; letter-spacing:2px;">PARTICLE LAB <span style="opacity:0.4">v1.6</span></span>
+                <button class="plab-topbar-btn" onclick="togglePlabControls()">&#9881; CTRL</button>
+            </div>
+            <div class="plab-body">
+                <div class="plab-canvas-wrap" id="plab-canvas-wrap">
+                    <canvas id="particleCanvas"></canvas>
+                </div>
+                <div class="plab-controls" id="plab-controls">
+                    <div class="plab-section-title">Particles</div>
+                    <div class="plab-cg">
+                        <label>Amount <span id="val-amount" class="plab-val">150</span></label>
+                        <input type="range" id="ctrl-amount" min="10" max="600" value="150">
+                    </div>
+                    <div class="plab-cg">
+                        <label>Size <span id="val-size" class="plab-val">3</span></label>
+                        <input type="range" id="ctrl-size" min="1" max="20" value="3">
+                    </div>
+                    <div class="plab-cg">
+                        <label>Speed <span id="val-speed" class="plab-val">1.5</span></label>
+                        <input type="range" id="ctrl-speed" min="0" max="15" value="1.5" step="0.5">
+                    </div>
+                    <div class="plab-cg">
+                        <label>Gravity <span id="val-gravity" class="plab-val">0</span></label>
+                        <input type="range" id="ctrl-gravity" min="-2" max="2" value="0" step="0.1">
+                    </div>
+                    <div class="plab-cg">
+                        <label>Repel <span id="val-repel" class="plab-val">1.5</span></label>
+                        <input type="range" id="ctrl-repel" min="0.1" max="10" value="1.5" step="0.1">
+                    </div>
+                    <div class="plab-cg">
+                        <label>Trails <span id="val-trails" class="plab-val">0</span></label>
+                        <input type="range" id="ctrl-trails" min="0" max="1" value="0" step="0.01">
+                    </div>
+
+                    <div class="plab-section-title">Appearance</div>
+                    <div class="plab-cg">
+                        <label>Shape</label>
+                        <select id="ctrl-shape">
+                            <option value="square">Square</option>
+                            <option value="circle" selected>Circle</option>
+                            <option value="triangle">Triangle</option>
+                            <option value="star">Star</option>
+                        </select>
+                    </div>
+                    <div class="plab-cg">
+                        <label>Color Mode</label>
+                        <select id="ctrl-colormode">
+                            <option value="solid" selected>Solid</option>
+                            <option value="random">Random Neon</option>
+                            <option value="velocity">Velocity</option>
+                        </select>
+                    </div>
+                    <div class="plab-cg" id="solid-color-group">
+                        <label>Color</label>
+                        <input type="color" id="ctrl-color" value="#00ffcc">
+                    </div>
+
+                    <div class="plab-section-title">Sim Modes</div>
+                    <div class="plab-mode-grid">
+                        <button class="plab-btn" id="btn-snow">Snow</button>
+                        <button class="plab-btn" id="btn-vortex">Vortex</button>
+                        <button class="plab-btn active" id="btn-plexus">Plexus</button>
+                        <button class="plab-btn" id="btn-liquid">Liquid</button>
+                    </div>
+                    <button class="plab-btn" id="btn-explode">&#9889; Explode</button>
+
+                    <div class="plab-section-title">Presets</div>
+                    <div class="plab-cg">
+                        <select id="ctrl-presets"><option value="-1">-- None Saved --</option></select>
+                        <div style="display:flex; gap:4px; margin-top:3px;">
+                            <button class="plab-btn" id="btn-save-preset" style="flex:1;">Save</button>
+                            <button class="plab-btn" id="btn-load-preset" style="flex:1;">Load</button>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:auto; text-align:center; font-size:0.6rem; opacity:0.3; padding-top:8px;">
+                        LMB = Repel &nbsp;|&nbsp; RMB = Attract
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SYS MON App -->
+    <div id="layer-sysmon" class="absolute inset-0 bg-black" style="z-index:37; display:none; flex-direction:column;">
+        <div id="sysmon-loading" class="plab-loading-screen">
+            <div id="sysmon-loading-text"></div>
+        </div>
+        <div id="sysmon-app" style="display:none; flex-direction:column; flex:1; min-height:0;">
+            <div class="plab-topbar">
+                <button class="plab-topbar-btn" onclick="closeSysMon()">&#8592; EXIT</button>
+                <span class="text-theme" style="font-size:0.85rem; font-weight:bold; letter-spacing:2px;">SYS_MON <span style="opacity:0.4">v2.1</span></span>
+                <span></span>
+            </div>
+            <div class="p-4 md:p-6 overflow-y-auto flex-grow">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="border border-theme bg-theme-dim p-3 rounded flex flex-col">
+                        <h3 class="text-sm border-b border-theme pb-2 mb-3 text-theme font-bold">HARDWARE</h3>
+                        <div class="space-y-3 flex-grow text-theme">
+                            <div>
+                                <div class="flex justify-between text-xs mb-1"><span>CPU LOAD</span><span id="sysmon-cpu">42%</span></div>
+                                <div class="h-2 bg-zinc-900 rounded overflow-hidden"><div id="sysmon-cpu-bar" class="h-full bg-theme" style="width:42%"></div></div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs mb-1"><span>MEM USAGE</span><span id="sysmon-mem">89%</span></div>
+                                <div class="h-2 bg-zinc-900 rounded overflow-hidden"><div id="sysmon-mem-bar" class="h-full bg-yellow-500" style="width:89%"></div></div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs mb-1"><span>THERMALS</span><span id="sysmon-temp">85&deg;C</span></div>
+                                <div class="h-2 bg-zinc-900 rounded overflow-hidden"><div id="sysmon-temp-bar" class="h-full bg-red-500" style="width:85%"></div></div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs mb-1"><span>GPU UTIL</span><span id="sysmon-gpu">67%</span></div>
+                                <div class="h-2 bg-zinc-900 rounded overflow-hidden"><div id="sysmon-gpu-bar" class="h-full bg-theme" style="width:67%"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="md:col-span-2 border border-theme bg-theme-dim p-3 rounded relative overflow-hidden">
+                        <h3 class="text-sm border-b border-theme pb-2 mb-3 text-theme font-bold">ACTIVE PROCESSES</h3>
+                        <div class="text-xs space-y-2 font-mono text-theme">
+                            <p class="opacity-80">> daemon_watchdog.exe ........... RUNNING</p>
+                            <p class="opacity-80">> stealth_cloak_v2.sys .......... <span id="stealth-status" class="status-standby">STANDBY</span></p>
+                            <p class="opacity-80">> packet_sniffer.sh ............. LISTENING</p>
+                            <p>> ice_breaker_auto.bat .......... <span id="ice-status" class="status-standby">STANDBY</span></p>
+                            <p>> sentinel_watch.sys ............ <span id="sentinel-status" class="status-standby">STANDBY</span></p>
+                            <p class="mt-3 text-theme font-bold animate-pulse">> AWAITING COMMAND INPUT_</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bee Sim App -->
+    <div id="layer-beesim" class="absolute inset-0 bg-black" style="z-index:36; display:none; flex-direction:column;">
+        <div id="beesim-loading" class="plab-loading-screen">
+            <div id="beesim-loading-text"></div>
+        </div>
+        <div id="beesim-app" style="display:none; flex-direction:column; flex:1; min-height:0;">
+            <div class="plab-topbar">
+                <button class="plab-topbar-btn" onclick="closeBeeSim()">&#8592; EXIT</button>
+                <span class="text-theme" style="font-size:0.85rem; font-weight:bold; letter-spacing:2px;">BEE_SIM <span style="opacity:0.4">v1.0</span></span>
+                <button class="plab-topbar-btn" onclick="toggleBeeSimControls()">&#9881; CTRL</button>
+            </div>
+            <div class="plab-body">
+                <div class="plab-canvas-wrap" id="beesim-canvas-wrap">
+                    <canvas id="beeSimCanvas" style="cursor:crosshair;"></canvas>
+                </div>
+                <div class="plab-controls" id="beesim-controls">
+                    <div class="plab-section-title">Swarm Behavior</div>
+                    <div class="plab-cg">
+                        <label>Cohesion <span id="bee-cohesionVal" class="plab-val">40</span></label>
+                        <input type="range" id="bee-cohesion" min="0" max="100" value="40">
+                    </div>
+                    <div class="plab-cg">
+                        <label>Alignment <span id="bee-alignmentVal" class="plab-val">50</span></label>
+                        <input type="range" id="bee-alignment" min="0" max="100" value="50">
+                    </div>
+                    <div class="plab-cg">
+                        <label>Separation <span id="bee-separationVal" class="plab-val">60</span></label>
+                        <input type="range" id="bee-separation" min="0" max="100" value="60">
+                    </div>
+                    <div class="plab-cg">
+                        <label>Speed <span id="bee-speedVal" class="plab-val">45</span></label>
+                        <input type="range" id="bee-speed" min="10" max="100" value="45">
+                    </div>
+                    <div class="plab-cg">
+                        <label>Vision <span id="bee-visionVal" class="plab-val">90</span></label>
+                        <input type="range" id="bee-vision" min="30" max="200" value="90">
+                    </div>
+                    <div class="plab-cg" style="margin-top:6px;">
+                        <label style="display:flex; align-items:center; gap:6px; font-size:0.7rem;">
+                            <input type="checkbox" id="bee-showVision" style="accent-color:var(--theme-color);">
+                            Show field of vision
+                        </label>
+                    </div>
+                    <div style="margin-top:auto; text-align:center; font-size:0.6rem; opacity:0.3; padding-top:8px;">
+                        LMB = Attract &nbsp;|&nbsp; RMB = Scatter
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resource Router App -->
+    <div id="layer-resource-router" class="absolute inset-0 bg-black" style="z-index:38; display:none; flex-direction:column;">
+        <div id="router-loading" class="plab-loading-screen">
+            <div id="router-loading-text"></div>
+        </div>
+        <div id="router-app" style="display:none; flex-direction:column; flex:1; min-height:0;">
+            <div class="plab-topbar">
+                <button class="plab-topbar-btn" onclick="closeResourceRouter()">&#8592; EXIT</button>
+                <span class="text-theme" style="font-size:0.85rem; font-weight:bold; letter-spacing:2px;">RESOURCE ROUTER <span style="opacity:0.4">v3.0</span></span>
+                <span></span>
+            </div>
+            <div class="router-empty-container">
+                <div class="text-theme" style="font-size:1.5rem; opacity:0.15;">&#127760;</div>
+                <div class="text-theme" style="font-size:0.7rem; opacity:0.2; letter-spacing:2px;">NO ROUTES CONFIGURED</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Docs Viewer App -->
+    <div id="layer-docs-viewer" class="absolute inset-0 bg-black" style="z-index:39; display:none; flex-direction:column;">
+        <div id="docs-loading" class="plab-loading-screen">
+            <div id="docs-loading-text"></div>
+        </div>
+        <div id="docs-app" style="display:none; flex-direction:column; flex:1; min-height:0;">
+            <div class="plab-topbar">
+                <button class="plab-topbar-btn" onclick="closeDocsViewer()">&#8592; EXIT</button>
+                <span class="text-theme" style="font-size:0.85rem; font-weight:bold; letter-spacing:2px;" id="docs-title">DOCS <span style="opacity:0.4">v1.0</span></span>
+                <span></span>
+            </div>
+            <div class="docs-viewer-body">
+                <nav class="docs-sidebar" id="docs-sidebar"></nav>
+                <main class="docs-content" id="docs-content"></main>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bug Report Panel -->
+    <div id="bug-report-panel" class="bug-report-panel" style="z-index:45; display:none;">
+        <div class="bug-report-header">
+            <span class="text-theme" style="font-size:0.8rem; font-weight:bold; letter-spacing:2px;">&#128027; BUG REPORT</span>
+            <div class="bug-report-header-actions">
+                <button type="button" class="plab-topbar-btn" onclick="cancelBugReport()">&#10005; CANCEL</button>
+                <button type="button" class="plab-topbar-btn bug-report-send-btn" id="bug-report-send">&#8593; SEND</button>
+            </div>
+        </div>
+        <div class="bug-report-body">
+            <div class="bug-report-field">
+                <label for="bug-report-title" class="bug-report-label">TITLE <span id="bug-title-count" class="bug-report-charcount">0 / 60</span></label>
+                <input type="text" id="bug-report-title" class="bug-report-input" maxlength="60" placeholder="Brief description of the issue...">
+            </div>
+            <div class="bug-report-field">
+                <label for="bug-report-desc" class="bug-report-label">DETAILS <span id="bug-desc-count" class="bug-report-charcount">0 / 250</span></label>
+                <textarea id="bug-report-desc" class="bug-report-textarea" maxlength="250" placeholder="Steps to reproduce, expected vs actual behavior..." rows="4"></textarea>
+            </div>
+            <div class="bug-report-field">
+                <label class="bug-report-label">INCLUDE HARDWARE TELEMETRY
+                    <input type="checkbox" id="telemetry-toggle">
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Placeholder App Overlay -->
+    <div id="layer-placeholder" style="position:absolute; inset:0; z-index:40; display:none;">
+        <div class="placeholder-overlay">
+            <div style="font-size:2.5rem;">&#128274;</div>
+            <div class="text-theme text-xl font-bold tracking-widest" id="placeholder-name">APP_NAME</div>
+            <div class="text-zinc-500 text-sm">MODULE NOT YET INSTALLED</div>
+            <div class="text-zinc-600 text-xs mt-1">Contact your Netrunner for access</div>
+            <button class="placeholder-back-btn" onclick="closePlaceholder()">&#8592; BACK TO OS</button>
+        </div>
+    </div>
+</div>
+
+<!-- Mini Display -->
+<div id="mini-display" class="mini-display-container"></div>
+
+<!-- Deck Console -->
+<div class="deck-console">
+    <div class="flex flex-col gap-2">
+        <div class="text-zinc-500 text-xs md:text-sm font-bold tracking-widest">
+            ONYX CYBERNETICS<br class="md:hidden"/> // DECK-MK IV
+        </div>
+        <div class="flex flex-wrap items-center gap-6">
+            <div class="flex items-center gap-2">
+                <label for="theme-selector" class="text-xs text-zinc-400 font-bold">OS THEME:</label>
+                <select id="theme-selector" class="deck-select" onchange="changeTheme(this.value)">
+                    <option value="amber">Swarm Amber</option>
+                    <option value="green">Neon Green</option>
+                    <option value="blue">Cyber Blue</option>
+                    <option value="pink">Vaporwave Pink</option>
+                </select>
+            </div>
+            <button type="button" id="mode-toggle" class="mode-toggle" aria-label="Toggle light or dark mode" onclick="toggleLightMode()">
+                <span class="mode-icon" id="mode-icon">&#9790;</span>
+            </button>
+            <div class="flex items-center gap-2">
+                <label for="protocol-selector" class="text-xs text-zinc-400 font-bold">PROTOCOL:</label>
+                <select id="protocol-selector" class="deck-select" onchange="changeProtocol(this.value)">
+                    <option value="standby">Standby</option>
+                    <option value="iceburn">Ice Burn</option>
+                    <option value="sentinel">Sentinel</option>
+                    <option value="ghost">Ghost Mode</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="flex items-center gap-4">
+        <button type="button" id="bug-report-btn" class="bug-report-btn" aria-label="Submit bug report" onclick="toggleBugReport()">
+            <span class="bug-report-btn-icon">&#128027;</span>
+        </button>
+        <div class="switch-container">
+            <div class="text-xs text-zinc-400 font-bold">PWR</div>
+            <button type="button" id="power-switch" class="switch" aria-label="Toggle system power" aria-pressed="false">
+                <div class="switch-toggle"></div>
+            </button>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
