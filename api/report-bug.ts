@@ -14,13 +14,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const linear = new LinearClient({ apiKey });
-  const { title, description, engineVersion, gpuInfo } = req.body;
+  const { title, description, engineVersion, includeTelemetry, gpuInfo } = req.body;
+
+  const metadataLines = [`- **Engine Build:** ${engineVersion}`];
+  if (includeTelemetry === true) {
+    metadataLines.push(`- **GPU/Renderer:** ${gpuInfo}`);
+    metadataLines.push(`- **Browser Context:** ${req.headers['user-agent']}`);
+  } else {
+    metadataLines.push(`- **Telemetry:** Opted out`);
+  }
 
   try {
     const issue = await linear.createIssue({
       teamId: teamId,
       title: `[BUG] ${title}`,
-      description: `**Reporter Description:**\n${description}\n\n---\n**Technical Metadata (System Audit):**\n- **Engine Build:** ${engineVersion}\n- **GPU/Renderer:** ${gpuInfo}\n- **Browser Context:** ${req.headers['user-agent']}`,
+      description: `**Reporter Description:**\n${description}\n\n---\n**Technical Metadata (System Audit):**\n${metadataLines.join('\n')}`,
       priority: 2,
     });
 

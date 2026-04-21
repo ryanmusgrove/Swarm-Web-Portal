@@ -6,7 +6,8 @@ interface BugReportPayload {
     title: string;
     description: string;
     engineVersion: string;
-    gpuInfo: string;
+    includeTelemetry: boolean;
+    gpuInfo?: string;
 }
 
 // --- External functions (defined in sibling scripts) ---
@@ -462,12 +463,16 @@ async function submitBugReport(): Promise<void> {
     sendBtn.textContent = 'UPLINKING...';
     sendBtn.disabled = true;
 
+    const includeTelemetry = !!telemetryToggle?.checked;
     const payload: BugReportPayload = {
         title: titleEl.value.trim(),
         description: descEl.value.trim(),
         engineVersion: 'v7.0.4',
-        gpuInfo: telemetryToggle?.checked ? getHardwareTelemetry() : 'Opt-out'
+        includeTelemetry
     };
+    if (includeTelemetry) {
+        payload.gpuInfo = getHardwareTelemetry();
+    }
 
     try {
         const res = await fetch('/api/report-bug', {
