@@ -7,7 +7,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const apiKey = process.env['LINEAR_API_KEY'];
-  const teamId = process.env['LINEAR_TEAM_ID'];
+  const teamId = process.env['LINEAR_TEAM_ID_WEB'];
 
   if (!apiKey || !teamId) {
     return res.status(500).json({ success: false, error: 'Server missing Linear credentials.' });
