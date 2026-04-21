@@ -8,7 +8,22 @@
       "Bash(npm init:*)",
       "Bash(node -e \"const p = require\\(''./package.json''\\); console.log\\(''devDependencies:'', JSON.stringify\\(p.devDependencies, null, 2\\)\\)\")",
       "Bash(npx tsc:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "mcp__1026c1e5-29c5-4504-a694-ed55605c6dbe__get_issue",
+      "mcp__1026c1e5-29c5-4504-a694-ed55605c6dbe__list_comments",
+      "Bash(git checkout *)",
+      "Bash(git --no-pager diff --stat)",
+      "Bash(git --no-pager diff api/report-bug.ts js/cyberdeck-os.ts)",
+      "Bash(git --no-pager log -5 --pretty=format:\"%h %s\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git --no-pager log -1 --stat)",
+      "Bash(git --no-pager log main..HEAD --pretty=format:\"%h %s\")",
+      "Bash(git --no-pager diff main...HEAD --stat)",
+      "Bash(gh pr *)",
+      "Bash(git push *)",
+      "Bash(git fetch *)",
+      "Bash(git --no-pager log origin/main -3 --pretty=format:\"%h %s\")"
     ]
   }
 }
