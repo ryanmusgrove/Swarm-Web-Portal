@@ -475,7 +475,10 @@ async function submitBugReport(): Promise<void> {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-        if (!res.ok) throw new Error('Uplink failed');
+        if (!res.ok) {
+            const body = await res.json().catch(() => null);
+            throw new Error(body?.error || 'Uplink failed');
+        }
         const data = await res.json();
         titleEl.value = '';
         descEl.value =
@@ -488,8 +491,15 @@ async function submitBugReport(): Promise<void> {
             '╚══════════════════════════════════╝';
         titleEl.disabled = true;
         descEl.disabled = true;
-    } catch {
-        descEl.value = '[ ERR :: UPLINK FAILED ]\n> Bug report transmission interrupted.\n> Please retry or contact your operator.';
+    } catch (error) {
+        const detail =
+            error instanceof Error ? error.message :
+            typeof error === 'string' ? error :
+            'Unknown error';
+        descEl.value =
+            '[ ERR :: UPLINK FAILED ]\n' +
+            '> Transmission interrupted.\n' +
+            '> Details: ' + detail;
     } finally {
         sendBtn.textContent = 'SEND';
         sendBtn.disabled = false;

@@ -31,6 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     throw new Error("Linear API failed to create issue");
   } catch (error: any) {
+    console.error("Linear API Error:", error);
     return res.status(500).json({ success: false, error: error.message });
   }
 }
