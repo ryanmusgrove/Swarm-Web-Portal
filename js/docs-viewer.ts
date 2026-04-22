@@ -1,5 +1,7 @@
 // ── Docs Viewer ──
 
+import { ENGINE_VERSION_LABEL } from './version';
+
 // --- External functions (defined in sibling scripts) ---
 declare function appBootAnimation(loadingEl: HTMLElement, textEl: HTMLElement, lines: string[], onComplete: () => void): () => void;
 declare function rememberFocusForLayer(layerId: string): void;
@@ -52,7 +54,7 @@ const overviewSections: DocsSection[] = [
         id: 'overview',
         title: 'SYSTEM OVERVIEW',
         content: `
-<p>Welcome to <code>SWARM_OS v7.0.4</code>, the Cyberdeck operating system built by <strong>Onyx Cybernetics</strong> for the <strong>Deck-MK IV</strong> platform.</p>
+<p>Welcome to <code>SWARM_OS ${ENGINE_VERSION_LABEL}</code>, the Cyberdeck operating system built by <strong>Onyx Cybernetics</strong> for the <strong>Deck-MK IV</strong> platform.</p>
 <p>This interface is a retro-futuristic cyberpunk terminal designed around swarm intelligence concepts. It features interactive simulations, system monitoring, resource routing, and a fully themed visual environment.</p>
 <p>The system is powered by the Swarm Engine — a high-performance runtime built on zero-allocation memory arenas, SIMD-aligned data layouts, and lock-free concurrency primitives.</p>
 <h3>Hardware Components</h3>

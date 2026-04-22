@@ -2,6 +2,8 @@
 // CYBERDECK OS - Core System
 // ==========================================
 
+import { ENGINE_VERSION, ENGINE_VERSION_LABEL } from './version';
+
 interface BugReportPayload {
     title: string;
     description: string;
@@ -46,16 +48,21 @@ let isPowerOn: boolean = false;
 let activeTimeouts: number[] = [];
 
 // --- DOM REFERENCES ---
-const layerOff       = document.getElementById('layer-off') as HTMLDivElement;
-const layerTerminal  = document.getElementById('layer-terminal') as HTMLDivElement;
-const layerSwarm     = document.getElementById('layer-swarm') as HTMLDivElement;
-const layerOs        = document.getElementById('layer-os') as HTMLDivElement;
-const terminalText   = document.getElementById('terminal-text') as HTMLDivElement;
-const loadingBar     = document.getElementById('loading-bar-container') as HTMLDivElement;
-const swarmContainer = document.getElementById('swarm-container') as HTMLDivElement;
-const miniDisplay    = document.getElementById('mini-display') as HTMLDivElement;
+function requireEl<T extends HTMLElement>(id: string): T {
+    const el = document.getElementById(id);
+    if (!el) throw new Error(`Missing required element: ${id}`);
+    return el as T;
+}
+const layerOff       = requireEl<HTMLDivElement>('layer-off');
+const layerTerminal  = requireEl<HTMLDivElement>('layer-terminal');
+const layerSwarm     = requireEl<HTMLDivElement>('layer-swarm');
+const layerOs        = requireEl<HTMLDivElement>('layer-os');
+const terminalText   = requireEl<HTMLDivElement>('terminal-text');
+const loadingBar     = requireEl<HTMLDivElement>('loading-bar-container');
+const swarmContainer = requireEl<HTMLDivElement>('swarm-container');
+const miniDisplay    = requireEl<HTMLDivElement>('mini-display');
 const powerSwitch    = document.getElementById('power-switch') as HTMLButtonElement | null;
-const asciiLogo      = document.getElementById('ascii-logo') as HTMLPreElement;
+const asciiLogo      = requireEl<HTMLPreElement>('ascii-logo');
 const overlayFocusMemory = new Map<string, HTMLElement>();
 
 function handleAppTileAction(action: string): void {
@@ -133,7 +140,7 @@ function rememberFocusForLayer(layerId: string): void {
     }
 }
 
-function canReceiveFocus(el: unknown): boolean {
+function canReceiveFocus(el: unknown): el is HTMLElement {
     if (!(el instanceof HTMLElement)) return false;
     if (!document.contains(el)) return false;
     if (el.hasAttribute('disabled')) return false;
@@ -283,7 +290,7 @@ function handleGlobalKeydown(event: KeyboardEvent): void {
 }
 
 const bootText: string[] = [
-    "BIOS Date 04/12/2077 14:32:01 Ver 7.0.4",
+    `BIOS Date 04/12/2077 14:32:01 Ver ${ENGINE_VERSION}`,
     "CPU: Kiroshi Optic-Core 9.2GHz",
     "Memory Test: 1048576K OK",
     "Initializing Neural Interface...",
@@ -322,6 +329,17 @@ function toggleLightMode(): void {
 
 // --- BUG REPORT ---
 let bugReportOpen: boolean = false;
+let bugReportSubmitting: boolean = false;
+
+async function fetchWithTimeout(input: RequestInfo, init: RequestInit, timeoutMs: number): Promise<Response> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        return await fetch(input, { ...init, signal: controller.signal });
+    } finally {
+        clearTimeout(timer);
+    }
+}
 
 function isBugReportDirty(): boolean {
     const title = document.getElementById('bug-report-title') as HTMLInputElement | null;
@@ -453,6 +471,8 @@ function getHardwareTelemetry(): string {
 }
 
 async function submitBugReport(): Promise<void> {
+    if (bugReportSubmitting) return;
+
     const titleEl = document.getElementById('bug-report-title') as HTMLInputElement;
     const descEl = document.getElementById('bug-report-desc') as HTMLTextAreaElement;
     const sendBtn = document.getElementById('bug-report-send') as HTMLButtonElement;
@@ -460,6 +480,7 @@ async function submitBugReport(): Promise<void> {
 
     if (!titleEl.value.trim() || !descEl.value.trim()) return;
 
+    bugReportSubmitting = true;
     sendBtn.textContent = 'UPLINKING...';
     sendBtn.disabled = true;
 
@@ -467,7 +488,7 @@ async function submitBugReport(): Promise<void> {
     const payload: BugReportPayload = {
         title: titleEl.value.trim(),
         description: descEl.value.trim(),
-        engineVersion: 'v7.0.4',
+        engineVersion: ENGINE_VERSION_LABEL,
         includeTelemetry
     };
     if (includeTelemetry) {
@@ -475,11 +496,11 @@ async function submitBugReport(): Promise<void> {
     }
 
     try {
-        const res = await fetch('/api/report-bug', {
+        const res = await fetchWithTimeout('/api/report-bug', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
-        });
+        }, 10000);
         if (!res.ok) {
             const body = await res.json().catch(() => null);
             throw new Error(body?.error || 'Uplink failed');
@@ -498,6 +519,7 @@ async function submitBugReport(): Promise<void> {
         descEl.disabled = true;
     } catch (error) {
         const detail =
+            error instanceof Error && error.name === 'AbortError' ? 'Uplink timed out' :
             error instanceof Error ? error.message :
             typeof error === 'string' ? error :
             'Unknown error';
@@ -506,6 +528,7 @@ async function submitBugReport(): Promise<void> {
             '> Transmission interrupted.\n' +
             '> Details: ' + detail;
     } finally {
+        bugReportSubmitting = false;
         sendBtn.textContent = 'SEND';
         sendBtn.disabled = false;
     }
@@ -780,10 +803,12 @@ function closePlaceholder(): void {
 bindCoreInteractions();
 bindBugReportInputs();
 
+// Cross-file calls (consumed by other script modules via declare function)
 (window as any).rememberFocusForLayer = rememberFocusForLayer;
 (window as any).restoreFocusForLayer = restoreFocusForLayer;
+(window as any).appBootAnimation = appBootAnimation;
 
-// Inline HTML handlers
+// Inline HTML handlers. Remove a registration only after replacing its HTML caller.
 (window as any).changeTheme = changeTheme;
 (window as any).toggleLightMode = toggleLightMode;
 (window as any).changeProtocol = changeProtocol;
@@ -794,10 +819,5 @@ bindBugReportInputs();
 (window as any).closeDocsFolder = closeDocsFolder;
 (window as any).closePlaceholder = closePlaceholder;
 
-// Bug report submission
-(window as any).submitBugReport = submitBugReport;
+// Bug report submission (button wired directly)
 document.getElementById('bug-report-send')?.addEventListener('click', submitBugReport);
-
-// Cross-file calls
-(window as any).appBootAnimation = appBootAnimation;
-(window as any).launchSysMon = launchSysMon;

@@ -13,13 +13,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ success: false, error: 'Server missing Linear credentials.' });
   }
 
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const title = body['title'];
+  const description = body['description'];
+  const engineVersion = body['engineVersion'];
+  const includeTelemetry = body['includeTelemetry'] === true;
+  const gpuInfo = body['gpuInfo'];
+
+  if (typeof title !== 'string' || title.trim().length === 0 || title.length > 60) {
+    return res.status(400).json({ success: false, error: 'Invalid title' });
+  }
+  if (typeof description !== 'string' || description.trim().length === 0 || description.length > 250) {
+    return res.status(400).json({ success: false, error: 'Invalid description' });
+  }
+  if (typeof engineVersion !== 'string' || engineVersion.length === 0 || engineVersion.length > 20) {
+    return res.status(400).json({ success: false, error: 'Invalid engineVersion' });
+  }
+  if (includeTelemetry && gpuInfo !== undefined && (typeof gpuInfo !== 'string' || gpuInfo.length > 500)) {
+    return res.status(400).json({ success: false, error: 'Invalid gpuInfo' });
+  }
+
+  const userAgent = String(req.headers['user-agent'] ?? 'unknown').slice(0, 500);
   const linear = new LinearClient({ apiKey });
-  const { title, description, engineVersion, includeTelemetry, gpuInfo } = req.body;
 
   const metadataLines = [`- **Engine Build:** ${engineVersion}`];
-  if (includeTelemetry === true) {
-    metadataLines.push(`- **GPU/Renderer:** ${gpuInfo}`);
-    metadataLines.push(`- **Browser Context:** ${req.headers['user-agent']}`);
+  if (includeTelemetry) {
+    metadataLines.push(`- **GPU/Renderer:** ${typeof gpuInfo === 'string' ? gpuInfo : 'Unknown'}`);
+    metadataLines.push(`- **Browser Context:** ${userAgent}`);
   } else {
     metadataLines.push(`- **Telemetry:** Opted out`);
   }

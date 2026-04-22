@@ -23,7 +23,9 @@
       "Bash(gh pr *)",
       "Bash(git push *)",
       "Bash(git fetch *)",
-      "Bash(git --no-pager log origin/main -3 --pretty=format:\"%h %s\")"
+      "Bash(git --no-pager log origin/main -3 --pretty=format:\"%h %s\")",
+      "Bash(ls .claude/)",
+      "Bash(cat .claude/launch.json)"
     ]
   }
 }

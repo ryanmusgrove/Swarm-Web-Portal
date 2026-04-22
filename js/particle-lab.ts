@@ -49,6 +49,8 @@ let particles: Particle[] = [];
 let pw: number = 100, ph: number = 100;
 let plabActive: boolean = false, plabAnimId: number | null = null;
 let cancelPlabBoot: (() => void) | null = null;
+let plabResizeListener: (() => void) | null = null;
+let plabVisibilityListener: (() => void) | null = null;
 const LIQUID_PAIR_SAMPLE_TARGET = 320;
 const PLEXUS_SAMPLE_TARGET = 320;
 
@@ -147,7 +149,16 @@ class Particle {
         ctx.fillStyle=c; ctx.beginPath(); let sz=S.size;
         if(S.shape==='square'){ctx.rect(this.x-sz/2,this.y-sz/2,sz,sz);}
         else if(S.shape==='circle'){ctx.arc(this.x,this.y,sz/2,0,Math.PI*2);}
-        else if(S.shape==='triangle'){let a=Math.atan2(this.vy,this.vx);ctx.translate(this.x,this.y);ctx.rotate(a);ctx.moveTo(sz,0);ctx.lineTo(-sz/2,sz/2);ctx.lineTo(-sz/2,-sz/2);ctx.rotate(-a);ctx.translate(-this.x,-this.y);}
+        else if(S.shape==='triangle'){
+            const a = Math.atan2(this.vy, this.vx);
+            ctx.translate(this.x, this.y);
+            ctx.rotate(a);
+            ctx.moveTo(sz, 0);
+            ctx.lineTo(-sz/2, sz/2);
+            ctx.lineTo(-sz/2, -sz/2);
+            ctx.rotate(-a);
+            ctx.translate(-this.x, -this.y);
+        }
         else if(S.shape==='star'){let sp=5,oR=sz,iR=sz/2,rot=Math.PI/2*3,step=Math.PI/sp;ctx.moveTo(this.x,this.y-oR);for(let i=0;i<sp;i++){ctx.lineTo(this.x+Math.cos(rot)*oR,this.y+Math.sin(rot)*oR);rot+=step;ctx.lineTo(this.x+Math.cos(rot)*iR,this.y+Math.sin(rot)*iR);rot+=step;}}
         ctx.fill();
     }
@@ -185,7 +196,9 @@ function plabBind(id: string, key: keyof ParticleConfig, isF?: boolean): void {
     const inp = document.getElementById(`ctrl-${id}`) as HTMLInputElement;
     const disp = document.getElementById(`val-${id}`) as HTMLElement | null;
     inp.addEventListener('input', () => {
-        (S as Record<string, number | string>)[key] = isF ? parseFloat(inp.value) : parseInt(inp.value);
+        const n = isF ? parseFloat(inp.value) : parseInt(inp.value, 10);
+        if (Number.isNaN(n)) return;
+        (S as Record<string, number | string>)[key] = n;
         if(disp) disp.textContent = String(S[key]);
         if(key==='amount') syncP();
     });
@@ -278,8 +291,8 @@ const presetSel = document.getElementById('ctrl-presets') as HTMLSelectElement;
     let b=document.getElementById('btn-save-preset') as HTMLButtonElement,old=b.textContent; b.textContent='Saved!'; setTimeout(()=>b.textContent=old,1000);
 });
 (document.getElementById('btn-load-preset') as HTMLButtonElement).addEventListener('click', () => {
-    let i=parseInt(presetSel.value);
-    if(i>=0&&presets[i]){
+    const i = parseInt(presetSel.value, 10);
+    if(!Number.isNaN(i) && i >= 0 && i < presets.length && presets[i]){
         Object.assign(S,JSON.parse(JSON.stringify(presets[i])) as ParticleConfig);
         pUI('amount',S.amount,S.amount); pUI('size',S.size,S.size); pUI('speed',S.speed,S.speed);
         pUI('gravity',S.gravity,S.gravity); pUI('repel',S.repelStrength,S.repelStrength); pUI('trails',S.trails,S.trails);
@@ -314,6 +327,24 @@ function launchParticleLab(): void {
         cancelPlabBoot = null;
     }
 
+    // Attach window/document listeners for this session and remember refs for cleanup.
+    if (!plabResizeListener) {
+        plabResizeListener = () => { if (plabActive) plabResize(); };
+        window.addEventListener('resize', plabResizeListener);
+    }
+    if (!plabVisibilityListener) {
+        plabVisibilityListener = () => {
+            if (!plabActive) return;
+            if (document.hidden) {
+                if (plabAnimId) cancelAnimationFrame(plabAnimId);
+                plabAnimId = null;
+                return;
+            }
+            if (!plabAnimId) plabAnimate();
+        };
+        document.addEventListener('visibilitychange', plabVisibilityListener);
+    }
+
     cancelPlabBoot = appBootAnimation(plabLoadingEl, plabLoadingText, plabBootLines, () => {
         cancelPlabBoot = null;
         plabAppEl.style.display = 'flex';
@@ -329,33 +360,32 @@ function launchParticleLab(): void {
 }
 
 function closeParticleLab(): void {
-    if (cancelPlabBoot) {
-        cancelPlabBoot();
-        cancelPlabBoot = null;
+    try {
+        if (cancelPlabBoot) {
+            cancelPlabBoot();
+            cancelPlabBoot = null;
+        }
+        layerPLab.style.display = 'none';
+        canvas.classList.remove('gooey-effect');
+        if (typeof restoreFocusForLayer === 'function') restoreFocusForLayer('layer-particle-lab');
+    } finally {
+        plabActive = false;
+        if (plabAnimId) cancelAnimationFrame(plabAnimId);
+        plabAnimId = null;
+        if (plabResizeListener) {
+            window.removeEventListener('resize', plabResizeListener);
+            plabResizeListener = null;
+        }
+        if (plabVisibilityListener) {
+            document.removeEventListener('visibilitychange', plabVisibilityListener);
+            plabVisibilityListener = null;
+        }
     }
-    plabActive = false;
-    if (plabAnimId) cancelAnimationFrame(plabAnimId);
-    plabAnimId = null;
-    layerPLab.style.display = 'none';
-    canvas.classList.remove('gooey-effect');
-    if (typeof restoreFocusForLayer === 'function') restoreFocusForLayer('layer-particle-lab');
 }
 
 function togglePlabControls(): void {
     (document.getElementById('plab-controls') as HTMLDivElement).classList.toggle('collapsed');
 }
-
-window.addEventListener('resize', () => { if (plabActive) plabResize(); });
-
-document.addEventListener('visibilitychange', () => {
-    if (!plabActive) return;
-    if (document.hidden) {
-        if (plabAnimId) cancelAnimationFrame(plabAnimId);
-        plabAnimId = null;
-        return;
-    }
-    if (!plabAnimId) plabAnimate();
-});
 
 // Expose to global scope for inline HTML handlers and cross-file calls
 (window as any).launchParticleLab = launchParticleLab;

@@ -65,6 +65,8 @@ const beeLoadingText = document.getElementById('beesim-loading-text') as HTMLDiv
 let beeSimActive: boolean = false;
 let beeAnimId: number | null = null;
 let cancelBeeSimBoot: (() => void) | null = null;
+let beeResizeListener: (() => void) | null = null;
+let beeVisibilityListener: (() => void) | null = null;
 
 const BEE_NUM = 75;
 const BEE_HEX_SIZE = 13;
@@ -106,7 +108,10 @@ beeCanvas.addEventListener('touchmove', (e: TouchEvent) => {
 beeCanvas.addEventListener('touchend', () => { beeMouse.active = false; });
 
 function beeD2(a: { x: number; y: number }, b: { x: number; y: number }): number { const dx = a.x - b.x, dy = a.y - b.y; return dx*dx + dy*dy; }
-function beeDst(a: { x: number; y: number }, b: { x: number; y: number }): number { return Math.sqrt(beeD2(a, b)); }
+function beeDst(a: { x: number; y: number }, b: { x: number; y: number }): number {
+    const d2 = beeD2(a, b);
+    return d2 === 0 ? 0 : Math.sqrt(d2);
+}
 
 // ── Particles ──
 let beeParticles: BeeParticle[] = [];
@@ -811,6 +816,23 @@ function launchBeeSim(): void {
         cancelBeeSimBoot = null;
     }
 
+    if (!beeResizeListener) {
+        beeResizeListener = () => { if (beeSimActive) beeSimResize(); };
+        window.addEventListener('resize', beeResizeListener);
+    }
+    if (!beeVisibilityListener) {
+        beeVisibilityListener = () => {
+            if (!beeSimActive) return;
+            if (document.hidden) {
+                if (beeAnimId) cancelAnimationFrame(beeAnimId);
+                beeAnimId = null;
+                return;
+            }
+            if (!beeAnimId) beeSimLoop();
+        };
+        document.addEventListener('visibilitychange', beeVisibilityListener);
+    }
+
     cancelBeeSimBoot = appBootAnimation(beeLoadingEl, beeLoadingText, beeSimBootLines, () => {
         cancelBeeSimBoot = null;
         beeAppEl.style.display = 'flex';
@@ -823,32 +845,31 @@ function launchBeeSim(): void {
 }
 
 function closeBeeSim(): void {
-    if (cancelBeeSimBoot) {
-        cancelBeeSimBoot();
-        cancelBeeSimBoot = null;
+    try {
+        if (cancelBeeSimBoot) {
+            cancelBeeSimBoot();
+            cancelBeeSimBoot = null;
+        }
+        beeLayer.style.display = 'none';
+        if (typeof restoreFocusForLayer === 'function') restoreFocusForLayer('layer-beesim');
+    } finally {
+        beeSimActive = false;
+        if (beeAnimId) cancelAnimationFrame(beeAnimId);
+        beeAnimId = null;
+        if (beeResizeListener) {
+            window.removeEventListener('resize', beeResizeListener);
+            beeResizeListener = null;
+        }
+        if (beeVisibilityListener) {
+            document.removeEventListener('visibilitychange', beeVisibilityListener);
+            beeVisibilityListener = null;
+        }
     }
-    beeSimActive = false;
-    if (beeAnimId) cancelAnimationFrame(beeAnimId);
-    beeAnimId = null;
-    beeLayer.style.display = 'none';
-    if (typeof restoreFocusForLayer === 'function') restoreFocusForLayer('layer-beesim');
 }
 
 function toggleBeeSimControls(): void {
     (document.getElementById('beesim-controls') as HTMLDivElement).classList.toggle('collapsed');
 }
-
-window.addEventListener('resize', () => { if (beeSimActive) beeSimResize(); });
-
-document.addEventListener('visibilitychange', () => {
-    if (!beeSimActive) return;
-    if (document.hidden) {
-        if (beeAnimId) cancelAnimationFrame(beeAnimId);
-        beeAnimId = null;
-        return;
-    }
-    if (!beeAnimId) beeSimLoop();
-});
 
 // Expose to global scope for inline HTML handlers and cross-file calls
 (window as any).launchBeeSim = launchBeeSim;
