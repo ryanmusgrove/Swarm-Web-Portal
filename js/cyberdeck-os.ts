@@ -7,7 +7,6 @@ import { ENGINE_VERSION, ENGINE_VERSION_LABEL } from './version';
 interface BugReportPayload {
     title: string;
     description: string;
-    engineVersion: string;
     includeTelemetry: boolean;
     gpuInfo?: string;
 }
@@ -470,6 +469,33 @@ function getHardwareTelemetry(): string {
     return (gl as WebGLRenderingContext).getParameter(ext.UNMASKED_RENDERER_WEBGL) || 'Unknown';
 }
 
+function renderUplinkSuccess(ticketId: string): string {
+    const width = 36;
+    const bar = '═'.repeat(width);
+    const line = (text: string): string => '║' + text.padEnd(width) + '║';
+    return [
+        '╔' + bar + '╗',
+        line('      BUG REPORT UPLINKED'),
+        '╠' + bar + '╣',
+        line(''),
+        line('   »» TICKET: ' + ticketId.toUpperCase() + ' ««'),
+        line(''),
+        line('      STATUS: ACKNOWLEDGED'),
+        line('      ROUTE:  SWARM CENTRAL'),
+        '╚' + bar + '╝',
+    ].join('\n');
+}
+
+function armResetOnFirstInput(el: HTMLTextAreaElement): void {
+    const clear = () => {
+        el.value = '';
+        el.removeEventListener('focus', clear);
+        el.removeEventListener('keydown', clear);
+    };
+    el.addEventListener('focus', clear, { once: true });
+    el.addEventListener('keydown', clear, { once: true });
+}
+
 async function submitBugReport(): Promise<void> {
     if (bugReportSubmitting) return;
 
@@ -488,7 +514,10 @@ async function submitBugReport(): Promise<void> {
     const payload: BugReportPayload = {
         title: titleEl.value.trim(),
         description: descEl.value.trim(),
+<<<<<<< HEAD
         engineVersion: ENGINE_VERSION_LABEL,
+=======
+>>>>>>> 7085cb555d592cfa44d407ca444845e981e9541d
         includeTelemetry
     };
     if (includeTelemetry) {
@@ -507,16 +536,8 @@ async function submitBugReport(): Promise<void> {
         }
         const data = await res.json();
         titleEl.value = '';
-        descEl.value =
-            '╔══════════════════════════════════╗\n' +
-            '║  BUG REPORT UPLINKED             ║\n' +
-            '╠══════════════════════════════════╣\n' +
-            '║  TICKET ID: ' + data.id + '\n' +
-            '║  STATUS: ACKNOWLEDGED            ║\n' +
-            '║  ROUTE: SWARM CENTRAL            ║\n' +
-            '╚══════════════════════════════════╝';
-        titleEl.disabled = true;
-        descEl.disabled = true;
+        descEl.value = renderUplinkSuccess(data.id ?? 'UNKNOWN');
+        armResetOnFirstInput(descEl);
     } catch (error) {
         const detail =
             error instanceof Error && error.name === 'AbortError' ? 'Uplink timed out' :
