@@ -2,7 +2,7 @@
 // CYBERDECK OS - Core System
 // ==========================================
 
-import { ENGINE_VERSION } from './version';
+import { ENGINE_VERSION, ENGINE_VERSION_LABEL } from './version';
 
 interface BugReportPayload {
     title: string;
@@ -462,11 +462,16 @@ function bindBugReportInputs(): void {
 
 function getHardwareTelemetry(): string {
     const canvas = document.createElement('canvas');
-    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    const gl = canvas.getContext('webgl2') ?? canvas.getContext('webgl');
     if (!gl) return 'Unknown (WebGL unavailable)';
-    const ext = (gl as WebGLRenderingContext).getExtension('WEBGL_debug_renderer_info');
+    const ext = gl.getExtension('WEBGL_debug_renderer_info');
     if (!ext) return 'Unknown (renderer info unavailable)';
-    return (gl as WebGLRenderingContext).getParameter(ext.UNMASKED_RENDERER_WEBGL) || 'Unknown';
+    return gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) || 'Unknown';
+}
+
+function syncVersionDisplay(): void {
+    const el = document.getElementById('swarm-version');
+    if (el) el.textContent = `> SWARM_OS ${ENGINE_VERSION_LABEL}`;
 }
 
 function renderUplinkSuccess(ticketId: string): string {
@@ -499,11 +504,12 @@ function armResetOnFirstInput(el: HTMLTextAreaElement): void {
 async function submitBugReport(): Promise<void> {
     if (bugReportSubmitting) return;
 
-    const titleEl = document.getElementById('bug-report-title') as HTMLInputElement;
-    const descEl = document.getElementById('bug-report-desc') as HTMLTextAreaElement;
-    const sendBtn = document.getElementById('bug-report-send') as HTMLButtonElement;
+    const titleEl = document.getElementById('bug-report-title') as HTMLInputElement | null;
+    const descEl = document.getElementById('bug-report-desc') as HTMLTextAreaElement | null;
+    const sendBtn = document.getElementById('bug-report-send') as HTMLButtonElement | null;
     const telemetryToggle = document.getElementById('telemetry-toggle') as HTMLInputElement | null;
 
+    if (!titleEl || !descEl || !sendBtn) return;
     if (!titleEl.value.trim() || !descEl.value.trim()) return;
 
     bugReportSubmitting = true;
@@ -817,6 +823,7 @@ function closePlaceholder(): void {
     restoreFocusForLayer('layer-placeholder');
 }
 
+syncVersionDisplay();
 bindCoreInteractions();
 bindBugReportInputs();
 
