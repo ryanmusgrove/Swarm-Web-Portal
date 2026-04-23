@@ -792,3 +792,47 @@ body.light-mode #power-switch .switch-toggle { background: #c44; }
     .docs-sidebar { display: none; }
     .docs-content { padding: 1rem; }
 }
+
+/* ─── Ring Buffer ─── */
+.ringbuf-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+.ringbuf-badge {
+    flex: 1 1 calc(50% - 4px);
+    background: #1a1d27;
+    border: 1px solid #2a2d3a;
+    border-radius: 4px;
+    padding: 4px 6px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem;
+    display: flex;
+    justify-content: space-between;
+    color: #aaa;
+}
+.ringbuf-label { opacity: 0.6; }
+.ringbuf-badge-w { color: #4ade80; border-color: rgba(74, 222, 128, 0.4); }
+.ringbuf-badge-r { color: #60a5fa; border-color: rgba(96, 165, 250, 0.4); }
+
+.ringbuf-btn-write { border-color: #4ade80 !important; color: #4ade80 !important; }
+.ringbuf-btn-read  { border-color: #60a5fa !important; color: #60a5fa !important; }
+.ringbuf-btn-auto  { border-color: #c084fc !important; color: #c084fc !important; }
+.ringbuf-btn-clear { border-color: #f87171 !important; color: #f87171 !important; }
+
+.ringbuf-log {
+    height: 120px;
+    overflow-y: auto;
+    background: #1a1d27;
+    border: 1px solid #2a2d3a;
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem;
+    color: #aaa;
+}
+.ringbuf-log .ringbuf-log-write { color: #4ade80; }
+.ringbuf-log .ringbuf-log-read  { color: #60a5fa; }
+.ringbuf-log .ringbuf-log-error { color: #f87171; }
+.ringbuf-log .ringbuf-log-info  { color: #c084fc; }

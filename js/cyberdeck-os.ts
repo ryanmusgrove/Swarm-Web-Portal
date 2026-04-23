@@ -22,6 +22,9 @@ declare function launchResourceRouter(): void;
 declare function launchDocsViewer(docKey?: string): void;
 declare function togglePlabControls(): void;
 declare function toggleBeeSimControls(): void;
+declare function launchRingBuffer(): void;
+declare function closeRingBuffer(): void;
+declare function toggleRingBufferControls(): void;
 
 // --- Types ---
 interface CyberdeckTheme {
@@ -72,6 +75,7 @@ function handleAppTileAction(action: string): void {
     else if (action === 'sysmon') launchSysMon();
     else if (action === 'resource-router') launchResourceRouter();
     else if (action === 'bee-sim') launchBeeSim();
+    else if (action === 'ring-buffer') launchRingBuffer();
     else if (action === 'crypt-vault') showPlaceholder('CRYPT_VAULT');
     else if (action === 'jack-in') showPlaceholder('JACK_IN');
 }
@@ -592,6 +596,7 @@ function togglePower(): void {
         if (typeof closeParticleLab === 'function') closeParticleLab();
         if (typeof closeResourceRouter === 'function') closeResourceRouter();
         if (typeof closeBeeSim === 'function') closeBeeSim();
+        if (typeof closeRingBuffer === 'function') closeRingBuffer();
         if (typeof closeDocsViewer === 'function') closeDocsViewer();
         if (bugReportOpen) closeBugReport();
         closeDocsFolder();

@@ -1036,12 +1036,115 @@ esc(`applyMouse():
 ];
 
 // ══════════════════════════════════════════
+// DOCUMENT: Ring Buffer
+// ══════════════════════════════════════════
+const ringBufferSections: DocsSection[] = [
+    {
+        id: 'overview',
+        title: 'OVERVIEW',
+        content: `
+<p>A <strong>ring buffer</strong> (a.k.a. circular buffer or circular queue) is a fixed-size FIFO data structure where the storage logically wraps around — the end of the array is treated as adjacent to the beginning. It's the workhorse of audio DSP, serial I/O, lock-free producer/consumer queues, and any place where you need O(1) enqueue/dequeue without ever shifting elements.</p>
+<p>Conceptually it's a flat array plus two pointers:</p>
+<ul>
+<li><strong>head</strong> — where the next <em>write</em> goes (also called <code>write</code> or <code>in</code>)</li>
+<li><strong>tail</strong> — where the next <em>read</em> comes from (also called <code>read</code> or <code>out</code>)</li>
+</ul>
+<p>Both pointers monotonically advance and wrap modulo the buffer's capacity. This visualizer arranges the slots around a circle so that "wrap-around" is literally visual: the head pointer chases the tail around the ring.</p>
+`
+    },
+    {
+        id: 'pointer-math',
+        title: 'POINTER MATH',
+        content: `
+<p>The whole trick of a ring buffer fits in two lines. After every operation the affected pointer advances by one and wraps using the modulo operator:</p>
+` + makeCodeBlock('Pointer Advance',
+esc(`head = (head + 1) % capacity;   // after a write
+tail = (tail + 1) % capacity;   // after a read`),
+esc(`after enqueue: head = (head + 1) mod N
+after dequeue: tail = (tail + 1) mod N`)) + `
+<p>That's it. There are no shifts, no allocations, and no resizes — every operation is pure O(1). On hardware where the capacity is a power of two, the modulo can be replaced by a bitwise AND (<code>head &amp; (capacity - 1)</code>), which is even cheaper.</p>
+`
+    },
+    {
+        id: 'enqueue-dequeue',
+        title: 'ENQUEUE / DEQUEUE',
+        content: `
+<p>This visualizer's <strong>WRITE</strong> button calls <code>enqueue</code> and the <strong>READ</strong> button calls <code>dequeue</code>. Both operations check a guard, mutate the slot, advance the pointer, and update the count.</p>
+` + makeCodeBlock('Enqueue (Write)',
+esc(`function enqueue(value: T): void {
+    if (count >= capacity) {
+        // Buffer FULL — caller decides: drop, overwrite, or block
+        return;
+    }
+    slots[head] = value;
+    head = (head + 1) % capacity;
+    count++;
+}`),
+esc(`enqueue(value):
+    if count == capacity: error (full)
+    slots[head] = value
+    head = (head + 1) mod capacity
+    count = count + 1`)) + `
+` + makeCodeBlock('Dequeue (Read)',
+esc(`function dequeue(): T | undefined {
+    if (count <= 0) {
+        // Buffer EMPTY — caller decides: return null, block, or throw
+        return undefined;
+    }
+    const value = slots[tail];
+    slots[tail] = null;          // optional: drop the GC reference
+    tail = (tail + 1) % capacity;
+    count--;
+    return value;
+}`),
+esc(`dequeue():
+    if count == 0: error (empty)
+    value = slots[tail]
+    tail = (tail + 1) mod capacity
+    count = count - 1
+    return value`)) + `
+<p>In production code the FULL/EMPTY guards are often replaced by overwrite-oldest (drop the tail when writing into a full buffer — common in audio scopes) or by blocking semantics (block the producer until the consumer makes room — common in IPC).</p>
+`
+    },
+    {
+        id: 'full-vs-empty',
+        title: 'FULL VS EMPTY',
+        content: `
+<p>The classic ring-buffer puzzle: when the buffer is empty <code>head == tail</code>, but when the buffer is <em>full</em> after wrapping all the way around, <code>head == tail</code> is <em>also</em> true. Two completely different states, identical pointers. There are three standard fixes:</p>
+<ol>
+<li><strong>Track count separately</strong> — keep an integer <code>count</code> alongside head/tail. <code>count == 0</code> means empty, <code>count == capacity</code> means full. This is what this visualizer does, and what you see in the COUNT badge.</li>
+<li><strong>Leave one slot unused</strong> — declare the buffer full when <code>(head + 1) % capacity == tail</code>. You sacrifice one slot of usable capacity in exchange for not needing a separate counter — useful in lock-free designs where atomic updates of two variables are expensive.</li>
+<li><strong>Use unbounded indices</strong> — let head and tail grow without wrapping; only wrap when indexing into the array (<code>slots[head % capacity]</code>). Then <code>count = head - tail</code>. This is the trick used in many lock-free SPSC queues, but assumes head/tail can grow forever (or wrap so far apart in the integer space that aliasing is impossible).</li>
+</ol>
+<p>Each approach has cache and concurrency tradeoffs; "which is best" depends entirely on whether you have one writer/one reader, multiple of either, and whether you can afford a counter.</p>
+`
+    },
+    {
+        id: 'visualization',
+        title: 'VISUALIZATION NOTES',
+        content: `
+<p>The on-screen mapping intentionally makes the abstraction physical:</p>
+<ul>
+<li><strong>Slots are arranged on a circle</strong>, indexed 0..7 starting from the top. Modulo wrap-around becomes literal motion around the ring.</li>
+<li><strong>Head pointer (W, green)</strong> sits on the outside of the ring; <strong>tail pointer (R, blue)</strong> sits on the inside, so they never visually collide even when they refer to the same slot.</li>
+<li><strong>Used arc</strong> — a faint green band traces the slots between tail and head, growing as the buffer fills and shrinking as it drains.</li>
+<li><strong>Particle bursts</strong> fire at the active slot on every write/read, color-matched to the operation.</li>
+<li><strong>Shake animation</strong> plays on FULL-write or EMPTY-read attempts, so you can't miss the guard-clause rejection.</li>
+<li><strong>Center readout</strong> shows <code>count / capacity</code> and one of EMPTY / used / FULL.</li>
+</ul>
+<p>The four operation buttons map directly to the four states a real producer/consumer system uses: WRITE (enqueue), READ (dequeue), AUTO DEMO (random producer/consumer at 60/40 weighting), and CLEAR (reset all state).</p>
+`
+    }
+];
+
+// ══════════════════════════════════════════
 // Document registry
 // ══════════════════════════════════════════
 const docsRegistry: Record<string, DocsEntry> = {
     'overview':      { title: 'SYSTEM OVERVIEW', version: 'v1.0', sections: overviewSections },
     'particle-lab':  { title: 'PARTICLE LAB',    version: 'v1.6', sections: particleLabSections },
-    'bee-sim':       { title: 'BEE SIM',         version: 'v1.0', sections: beeSimSections }
+    'bee-sim':       { title: 'BEE SIM',         version: 'v1.0', sections: beeSimSections },
+    'ring-buffer':   { title: 'RING BUFFER',     version: 'v1.0', sections: ringBufferSections }
 };
 
 // ══════════════════════════════════════════

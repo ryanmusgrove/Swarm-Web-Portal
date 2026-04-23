@@ -167,6 +167,10 @@
                     <div class="app-tile-icon">&#128029;</div>
                     <div class="text-xs text-theme">BEE<br>SIM</div>
                 </button>
+                <button type="button" class="app-tile" data-folder-app="ring-buffer" aria-label="Launch Ring Buffer Visualizer">
+                    <div class="app-tile-icon">&#128257;</div>
+                    <div class="text-xs text-theme">RING<br>BUFFER</div>
+                </button>
             </div>
         </div>
     </div>
@@ -190,6 +194,10 @@
                 <button type="button" class="app-tile" data-folder-doc="bee-sim" aria-label="Open Bee Sim Docs">
                     <div class="app-tile-icon">&#128029;</div>
                     <div class="text-xs text-theme">BEE<br>SIM</div>
+                </button>
+                <button type="button" class="app-tile" data-folder-doc="ring-buffer" aria-label="Open Ring Buffer Docs">
+                    <div class="app-tile-icon">&#128257;</div>
+                    <div class="text-xs text-theme">RING<br>BUFFER</div>
                 </button>
             </div>
         </div>
@@ -387,6 +395,47 @@
         </div>
     </div>
 
+    <!-- Ring Buffer App -->
+    <div id="layer-ring-buffer" class="absolute inset-0 bg-black" style="z-index:41; display:none; flex-direction:column;">
+        <div id="ringbuf-loading" class="plab-loading-screen">
+            <div id="ringbuf-loading-text"></div>
+        </div>
+        <div id="ringbuf-app" style="display:none; flex-direction:column; flex:1; min-height:0;">
+            <div class="plab-topbar">
+                <button class="plab-topbar-btn" onclick="closeRingBuffer()">&#8592; EXIT</button>
+                <span class="text-theme" style="font-size:0.85rem; font-weight:bold; letter-spacing:2px;">RING BUFFER <span style="opacity:0.4">v1.0</span></span>
+                <button class="plab-topbar-btn" onclick="toggleRingBufferControls()">&#9881; CTRL</button>
+            </div>
+            <div class="plab-body">
+                <div class="plab-canvas-wrap" id="ringbuf-canvas-wrap">
+                    <canvas id="ringbufferCanvas"></canvas>
+                </div>
+                <div class="plab-controls" id="ringbuf-controls">
+                    <div class="plab-section-title">State</div>
+                    <div class="ringbuf-info">
+                        <div class="ringbuf-badge"><span class="ringbuf-label">SIZE</span><span id="ringbuf-info-size">8</span></div>
+                        <div class="ringbuf-badge"><span class="ringbuf-label">COUNT</span><span id="ringbuf-info-count">0</span></div>
+                        <div class="ringbuf-badge ringbuf-badge-w"><span class="ringbuf-label">HEAD (W)</span><span id="ringbuf-info-head">0</span></div>
+                        <div class="ringbuf-badge ringbuf-badge-r"><span class="ringbuf-label">TAIL (R)</span><span id="ringbuf-info-tail">0</span></div>
+                    </div>
+
+                    <div class="plab-section-title">Operations</div>
+                    <button class="plab-btn ringbuf-btn-write" id="ringbuf-btn-write">&#9999; Write</button>
+                    <button class="plab-btn ringbuf-btn-read" id="ringbuf-btn-read">&#128214; Read</button>
+                    <button class="plab-btn ringbuf-btn-auto" id="ringbuf-btn-auto">&#9654; Auto Demo</button>
+                    <button class="plab-btn ringbuf-btn-clear" id="ringbuf-btn-clear">&#128465; Clear</button>
+
+                    <div class="plab-section-title">Event Log</div>
+                    <div class="ringbuf-log" id="ringbuf-log"></div>
+
+                    <div style="margin-top:auto; text-align:center; font-size:0.6rem; opacity:0.3; padding-top:8px;">
+                        Fixed-size FIFO &middot; head wraps mod N
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Resource Router App -->
     <div id="layer-resource-router" class="absolute inset-0 bg-black" style="z-index:38; display:none; flex-direction:column;">
         <div id="router-loading" class="plab-loading-screen">
@@ -512,5 +561,6 @@
 <script type="module" src="js/resource-router.ts?v=2"></script>
 <script type="module" src="js/honey-bee-sim.ts?v=2"></script>
 <script type="module" src="js/docs-viewer.ts?v=2"></script>
+<script type="module" src="js/ring-buffer.ts?v=3"></script>
 </body>
 </html>
