@@ -48,23 +48,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const defaults = getLinearDefaults(credentials.teamId);
     const linear = new LinearClient({ apiKey: credentials.apiKey });
 
+    let timeoutId: NodeJS.Timeout | undefined;
     try {
-        const issue = await linear.createIssue({
+        const createIssuePromise = linear.createIssue({
             ...defaults,
             title: `[BUG] ${title.trim()}`,
             description: buildIssueBody(bodyInput),
             priority: 2,
         });
+        const timeoutPromise = new Promise<never>((_, reject) => {
+            timeoutId = setTimeout(() => reject(new Error('Linear API timeout')), 8000);
+        });
+
+        const issue = await Promise.race([createIssuePromise, timeoutPromise]);
 
         if (issue.success) {
             const createdIssue = await issue.issue;
             return res.status(200).json({ success: true, id: createdIssue?.identifier });
         }
 
-        throw new Error("Linear API failed to create issue");
-    } catch (error: any) {
-        console.error("Linear API Error:", error);
-        return res.status(500).json({ success: false, error: error.message });
+        throw new Error('Linear API failed to create issue');
+    } catch (error: unknown) {
+        const detail = error instanceof Error ? error.message : String(error);
+        console.error('Linear API Error:', detail);
+        return res.status(500).json({ success: false, error: 'Failed to submit bug report. Please try again.' });
+    } finally {
+        if (timeoutId) clearTimeout(timeoutId);
     }
 }
 
