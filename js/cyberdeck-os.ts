@@ -2,7 +2,7 @@
 // CYBERDECK OS - Core System
 // ==========================================
 
-import { ENGINE_VERSION, ENGINE_VERSION_LABEL } from './version';
+import { ENGINE_VERSION } from './version';
 
 interface BugReportPayload {
     title: string;
@@ -514,10 +514,6 @@ async function submitBugReport(): Promise<void> {
     const payload: BugReportPayload = {
         title: titleEl.value.trim(),
         description: descEl.value.trim(),
-<<<<<<< HEAD
-        engineVersion: ENGINE_VERSION_LABEL,
-=======
->>>>>>> 7085cb555d592cfa44d407ca444845e981e9541d
         includeTelemetry
     };
     if (includeTelemetry) {

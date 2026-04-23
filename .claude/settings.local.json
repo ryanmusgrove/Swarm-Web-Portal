@@ -24,13 +24,10 @@
       "Bash(git push *)",
       "Bash(git fetch *)",
       "Bash(git --no-pager log origin/main -3 --pretty=format:\"%h %s\")",
-<<<<<<< HEAD
       "Bash(ls .claude/)",
-      "Bash(cat .claude/launch.json)"
-=======
+      "Bash(cat .claude/launch.json)",
       "Bash(xargs grep *)",
       "Bash(git stash *)"
->>>>>>> 7085cb555d592cfa44d407ca444845e981e9541d
     ]
   }
 }
