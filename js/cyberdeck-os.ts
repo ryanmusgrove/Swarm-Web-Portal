@@ -25,6 +25,9 @@ declare function toggleBeeSimControls(): void;
 declare function launchRingBuffer(): void;
 declare function closeRingBuffer(): void;
 declare function toggleRingBufferControls(): void;
+declare function launchHexLife(): void;
+declare function closeHexLife(): void;
+declare function toggleHexLifeControls(): void;
 
 // --- Types ---
 interface CyberdeckTheme {
@@ -76,6 +79,7 @@ function handleAppTileAction(action: string): void {
     else if (action === 'resource-router') launchResourceRouter();
     else if (action === 'bee-sim') launchBeeSim();
     else if (action === 'ring-buffer') launchRingBuffer();
+    else if (action === 'hex-life') launchHexLife();
     else if (action === 'crypt-vault') showPlaceholder('CRYPT_VAULT');
     else if (action === 'jack-in') showPlaceholder('JACK_IN');
 }
