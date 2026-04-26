@@ -1138,22 +1138,52 @@ esc(`dequeue():
 ];
 
 // ══════════════════════════════════════════
-// DOCUMENT: Hex-Life
+// DOCUMENT: Game of Life (hex + square)
 // ══════════════════════════════════════════
 const hexLifeSections: DocsSection[] = [
     {
         id: 'overview',
         title: 'OVERVIEW',
         content: `
-<p><strong>Hex-Life</strong> is a cellular automaton in the spirit of Conway's Game of Life, but played on a <strong>hexagonal grid</strong> instead of a square one. Each cell has exactly <strong>six neighbours</strong> — the regular hex neighbourhood — instead of Conway's eight (four orthogonal + four diagonal). With six neighbours, the geometry is fully symmetric: there is no privileged "diagonal" direction the way there is on a square grid, so patterns rotate and propagate uniformly.</p>
-<p>The rule used here is <strong>B2 / S3,4</strong>, popularised by Carter Bays in his 2005 survey of cellular automata on non-square tessellations as the closest hexagonal analogue of Conway's classic B3/S2,3. It is among the few hex rules that supports gliders and a rich emergent ecosystem of oscillators.</p>
+<p>The <strong>Game of Life</strong> is John Conway's 1970 cellular automaton — a universe of cells that live, die, and reproduce according to a handful of dead-simple rules. From a random seed it produces gliders, oscillators, blinkers, and stable structures, all from purely local interactions. It's been studied for half a century not for what it does but for what emerges from it.</p>
+<p>This visualizer ships with two grid topologies, switchable at runtime:</p>
+<ul>
+<li><strong>Hex grid (B2 / S3,4)</strong> — the rule popularised by Carter Bays in 2005 as the closest hexagonal analogue of Conway's original. Each cell has six equidistant neighbours.</li>
+<li><strong>Square grid (B3 / S2,3)</strong> — Conway's classic rule on the standard 8-neighbour Moore neighbourhood.</li>
+</ul>
+<p>Switching modes preserves the cell array and the generation counter; only the topology and rule change. The grid is always toroidal — edges wrap on both axes.</p>
 `
     },
     {
-        id: 'rule',
-        title: 'THE B2/S3,4 RULE',
+        id: 'conway-rule',
+        title: 'CONWAY RULE — B3/S2,3',
         content: `
-<p>Each generation, every cell counts how many of its <em>six</em> neighbours are alive and applies these two rules simultaneously across the whole grid:</p>
+<p>In square mode, every cell looks at its <strong>8 Moore neighbours</strong> (orthogonal + diagonal) and applies these rules simultaneously across the whole grid:</p>
+<ul>
+<li><strong>Birth (B3)</strong> — a dead cell becomes alive iff it has exactly <strong>3</strong> live neighbours.</li>
+<li><strong>Survival (S2,3)</strong> — a live cell stays alive iff it has <strong>2 or 3</strong> live neighbours; otherwise it dies (under-population if &lt; 2, over-population if &gt; 3).</li>
+</ul>
+` + makeCodeBlock('Conway Tick',
+esc(`for each cell (col, row):
+    n = count of live cells among the 8 Moore neighbours
+    if cell is alive:
+        next[col][row] = (n === 2 || n === 3) ? 1 : 0
+    else:
+        next[col][row] = (n === 3) ? 1 : 0
+swap(grid, next)`),
+esc(`for every cell:
+    n ← live neighbours of cell (out of 8)
+    if alive: stay alive only when n ∈ {2, 3}
+    if dead:  come alive only when n = 3
+apply all updates simultaneously`)) + `
+<p>This is the most-studied cellular automaton ever. The four-line rule is enough to produce <em>Turing-complete</em> behaviour: in B3/S2,3 you can encode logic gates, registers, and a working universal computer entirely out of glider streams.</p>
+`
+    },
+    {
+        id: 'hex-rule',
+        title: 'HEX-LIFE RULE — B2/S3,4',
+        content: `
+<p>In hex mode, every cell looks at its <strong>6 hex neighbours</strong> and applies a different threshold pair:</p>
 <ul>
 <li><strong>Birth (B2)</strong> — a dead cell becomes alive iff it has exactly <strong>2</strong> live neighbours.</li>
 <li><strong>Survival (S3,4)</strong> — a live cell stays alive iff it has <strong>3 or 4</strong> live neighbours; otherwise it dies.</li>
@@ -1169,31 +1199,16 @@ swap(grid, next)`),
 esc(`for every cell:
     n ← live neighbours of cell (out of 6)
     if alive: stay alive only when n ∈ {3, 4}
-    if dead:  come alive only when n = 2
-apply all updates simultaneously`)) + `
-<p>The simultaneous-update rule is essential. If you applied births and deaths cell-by-cell in scan order, later cells would see updated neighbours instead of last-generation neighbours, and the dynamics would change entirely. The implementation here writes into a second buffer and swaps pointers at the end of each tick.</p>
-`
-    },
-    {
-        id: 'hex-grid',
-        title: 'WHY A HEX GRID?',
-        content: `
-<p>Square grids have an awkward asymmetry: a cell's <em>orthogonal</em> neighbours (up/down/left/right) are at distance 1, but its <em>diagonal</em> neighbours are at distance √2. Conway's "Moore neighbourhood" treats all eight as equivalent anyway, which means information propagates faster diagonally than orthogonally — patterns develop a faint preferred axis.</p>
-<p>A hex grid has no such bias. All six neighbours sit at equal distance, and the three axes through any cell are symmetric under 60° rotation. As a consequence:</p>
-<ul>
-<li>Gliders in B2/S3,4 can travel along <strong>any</strong> of the three axis-pairs without distortion.</li>
-<li>Oscillators have rotational symmetry options that don't exist on a square grid.</li>
-<li>The neighbour count maxes out at 6, so birth/survival thresholds compress into a smaller range — fewer rules, sharper transitions.</li>
-</ul>
-<p>The trade-off: hex coordinates are awkward to draw and to store. This visualizer uses <strong>odd-q offset coordinates</strong> (a flat-top hex with odd-numbered columns shifted down half a row), which lets the cells live in a plain rectangular array while still rendering as a proper honeycomb.</p>
+    if dead:  come alive only when n = 2`)) + `
+<p>Bays surveyed every reasonable hex rule and found B2/S3,4 to be the closest match to Conway's behaviour: it supports gliders, oscillators, and a similar mix of mortal and immortal patterns. Other hex rules either die out instantly or explode into solid live regions.</p>
+<p>Both rules use simultaneous updates — births and deaths are computed against the previous generation's state and committed only after every cell has been evaluated. The implementation writes into a second buffer and swaps pointers at the end of each tick.</p>
 `
     },
     {
         id: 'topology',
-        title: 'TOROIDAL WRAP',
+        title: 'GRIDS & TOROIDAL WRAP',
         content: `
-<p>The grid is <strong>toroidal</strong>: cells at the right edge are neighbours of cells at the left edge, and cells at the bottom are neighbours of cells at the top. There are no "edges" the simulation has to special-case, and a glider launched in any direction will eventually return to its starting cell.</p>
-<p>Wrap is implemented in the neighbour lookup by taking each delta modulo the grid dimensions:</p>
+<p>Both grids are 32 columns wide × 28 rows tall and wrap toroidally — cells at the right edge are neighbours of cells at the left edge, and cells at the bottom are neighbours of cells at the top. There are no special edge cases; a glider launched in any direction eventually returns to its starting cell.</p>
 ` + makeCodeBlock('Toroidal Neighbour',
 esc(`const nc = (col + dc + COLS) % COLS;
 const nr = (row + dr + ROWS) % ROWS;
@@ -1201,7 +1216,8 @@ if (cells[nc * ROWS + nr]) alive++;`),
 esc(`neighbour col = (col + dc + COLS) mod COLS
 neighbour row = (row + dr + ROWS) mod ROWS`)) + `
 <p>The "<code>+ COLS</code>" before the modulo guards against negative deltas — JavaScript's <code>%</code> preserves sign, so <code>(-1) % 32</code> is <code>-1</code> rather than <code>31</code>. Adding the dimension first keeps the operand positive.</p>
-<p>Because the grid uses offset coordinates with column-parity-dependent neighbour tables, the wrap has a tiny "seam" at the column boundary where parity jumps. With an even column count (32 here) the seam sits between two columns of opposite parity but the neighbour lookups remain consistent — gliders cross the seam fine, even if the visual continuity is imperfect.</p>
+<p><strong>Why two topologies?</strong> Square grids have an awkward asymmetry: orthogonal neighbours sit at distance 1, but diagonal neighbours sit at distance √2. The Moore neighbourhood treats all eight as equivalent anyway, so information propagates faster diagonally than orthogonally and patterns develop a faint preferred axis. Hex grids have no such bias — all six neighbours are equidistant and the three axes are related by 60° rotation. Switching modes lets you watch the same starting configuration evolve under both geometries.</p>
+<p>The hex grid uses <strong>odd-q offset coordinates</strong> — a flat-top hex with odd-numbered columns shifted down half a row, stored in a plain rectangular array. The square grid is the same array drawn as a regular Cartesian lattice; only the geometry math and the neighbour table change between modes.</p>
 `
     },
     {
@@ -1210,11 +1226,12 @@ neighbour row = (row + dr + ROWS) mod ROWS`)) + `
         content: `
 <p>The right-hand panel exposes the full simulation interface:</p>
 <ul>
+<li><strong>Hex / Square</strong> — switch grid topology and rule on the fly. Cell array and generation counter are preserved across the switch.</li>
 <li><strong>Pause / Play</strong> — toggle the tick loop. While paused you can edit cells; while running the grid advances at the configured speed.</li>
 <li><strong>Step</strong> — advance exactly one generation. Pauses the simulation if it was running, so you can inspect each tick.</li>
 <li><strong>Randomize</strong> — re-seed the entire grid at the current density slider value, and reset the generation counter to 0.</li>
 <li><strong>Clear</strong> — empty the grid (all cells dead) and reset the generation counter.</li>
-<li><strong>Generations / sec</strong> — speed slider, 1–30. The render loop runs at the display's refresh rate; the simulation tick is decoupled and fires at 1000/speed millisecond intervals.</li>
+<li><strong>Generations / sec</strong> — speed slider. The render loop runs at the display's refresh rate; the simulation tick is decoupled and fires at <code>1000 / speed</code> millisecond intervals.</li>
 <li><strong>Density %</strong> — used by Randomize. Each cell becomes alive independently with this probability.</li>
 </ul>
 <p>While paused, the canvas accepts mouse input:</p>
@@ -1223,21 +1240,29 @@ neighbour row = (row + dr + ROWS) mod ROWS`)) + `
 <li><strong>Right-click + drag</strong> — erase cells (paint dead). The browser's context menu is suppressed over the canvas while paused.</li>
 <li>The cell under the cursor is highlighted with a thin outline so you can see what's about to be painted.</li>
 </ul>
-<p>The two badges at the top of the panel show the current <strong>GEN</strong> (generation count since the last clear/randomize/edit) and <strong>POP</strong> (total live cells right now).</p>
+<p>The two badges at the top of the panel show the current <strong>GEN</strong> (generation count since the last clear/randomize) and <strong>POP</strong> (total live cells right now).</p>
 `
     },
     {
         id: 'patterns',
         title: 'PATTERN ZOO',
         content: `
-<p>B2/S3,4 has a smaller, more chaotic pattern catalogue than Conway's Life, but a few stable structures show up reliably from random seeds:</p>
+<p><strong>Conway / B3/S2,3 patterns to try:</strong></p>
 <ul>
-<li><strong>Pulsing blobs</strong> — small clusters that oscillate with period 2 between two configurations. Easy to spot in random initial conditions: anywhere you see two cells "flickering" in lockstep.</li>
-<li><strong>Hex gliders</strong> — small mobile patterns that translate one cell per generation along one of the three axis-pairs. They are the only structures here that carry information across the grid.</li>
-<li><strong>Rotors</strong> — short oscillators with rotational symmetry that hex grids enable but square grids cannot.</li>
-<li><strong>Smoke clouds</strong> — large random regions tend to settle into slowly evolving "ash" of small oscillators and the occasional glider, similar to Life's behaviour but visibly hexier.</li>
+<li><strong>Glider</strong> — five cells in a small L-shape that translate diagonally one cell every four generations. The icon of cellular automata.</li>
+<li><strong>Blinker</strong> — three cells in a row that rotate 90° each tick. A two-state oscillator.</li>
+<li><strong>Block</strong> — a 2×2 square. The simplest still life: nothing changes.</li>
+<li><strong>Beacon</strong>, <strong>toad</strong>, <strong>pulsar</strong> — period-2 and period-3 oscillators.</li>
+<li>Random seeds settle within a few hundred ticks into a debris field of still lifes, blinkers, and the occasional escaping glider.</li>
 </ul>
-<p>Try this: clear the grid, paint a small cluster of 3-5 adjacent cells, hit Step a few times to watch how it evolves, and see whether it dies, stabilises, oscillates, or emits a glider.</p>
+<p><strong>Hex-Life / B2/S3,4 patterns to try:</strong></p>
+<ul>
+<li><strong>Pulsing blobs</strong> — small clusters that oscillate with period 2, easy to spot anywhere two cells flicker in lockstep.</li>
+<li><strong>Hex gliders</strong> — small mobile patterns that translate one cell per generation along one of the three axis-pairs.</li>
+<li><strong>Rotors</strong> — short oscillators with rotational symmetry that the hex topology enables but the square grid cannot.</li>
+<li><strong>Smoke clouds</strong> — random regions settle into slowly evolving "ash" of small oscillators and the occasional glider, similar to Conway but visibly hexier.</li>
+</ul>
+<p>Try this: clear the grid, paint a small cluster of 3-5 adjacent cells, hit Step a few times, then switch grid mode without clearing — the same cells will evolve very differently under the two rules.</p>
 `
     }
 ];
@@ -1250,7 +1275,7 @@ const docsRegistry: Record<string, DocsEntry> = {
     'particle-lab':  { title: 'PARTICLE LAB',    version: 'v1.6', sections: particleLabSections },
     'bee-sim':       { title: 'BEE SIM',         version: 'v1.0', sections: beeSimSections },
     'ring-buffer':   { title: 'RING BUFFER',     version: 'v1.0', sections: ringBufferSections },
-    'hex-life':      { title: 'HEX LIFE',        version: 'v1.0', sections: hexLifeSections }
+    'hex-life':      { title: 'GAME OF LIFE',    version: 'v1.1', sections: hexLifeSections }
 };
 
 // ══════════════════════════════════════════

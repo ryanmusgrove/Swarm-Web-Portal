@@ -1,6 +1,7 @@
 // ==========================================
-// HEX-LIFE — Hexagonal Game of Life (B2 / S3,4)
-// Carter Bays' Hex-Life rule on a toroidal hex grid.
+// GAME OF LIFE — toggleable Hex (B2/S3,4) or Square Conway (B3/S2,3)
+// on a toroidal grid. Internal identifiers retain the historical
+// `hx`/`hexlife` prefix from v1.0 (hex-only).
 // ==========================================
 
 // --- External functions (defined in sibling scripts) ---
@@ -25,8 +26,16 @@ const HX_NEIGHBORS_ODD: ReadonlyArray<readonly [number, number]> = [
     [-1, +1], [-1,  0]
 ];
 
+// Conway / square: 8-neighbour Moore neighbourhood.
+const SQ_NEIGHBORS: ReadonlyArray<readonly [number, number]> = [
+    [-1, -1], [ 0, -1], [+1, -1],
+    [-1,  0],           [+1,  0],
+    [-1, +1], [ 0, +1], [+1, +1]
+];
+
 // --- Types ---
 type HxPaintMode = 'alive' | 'dead' | null;
+type HxGridMode = 'hex' | 'square';
 
 // --- DOM REFS ---
 const hxCanvas       = document.getElementById('hexLifeCanvas') as HTMLCanvasElement;
@@ -40,6 +49,9 @@ const hxBtnPlay      = document.getElementById('hexlife-btn-play') as HTMLButton
 const hxBtnStep      = document.getElementById('hexlife-btn-step') as HTMLButtonElement;
 const hxBtnRand      = document.getElementById('hexlife-btn-rand') as HTMLButtonElement;
 const hxBtnClear     = document.getElementById('hexlife-btn-clear') as HTMLButtonElement;
+const hxBtnModeHex   = document.getElementById('hexlife-mode-hex') as HTMLButtonElement;
+const hxBtnModeSq    = document.getElementById('hexlife-mode-square') as HTMLButtonElement;
+const hxRuleLabel    = document.getElementById('hexlife-rule-label') as HTMLDivElement;
 const hxSpeedInput   = document.getElementById('hexlife-speed') as HTMLInputElement;
 const hxSpeedVal     = document.getElementById('hexlife-speed-val') as HTMLSpanElement;
 const hxDensityInput = document.getElementById('hexlife-density') as HTMLInputElement;
@@ -54,6 +66,7 @@ const hxAge: Uint8Array = new Uint8Array(HX_COLS * HX_ROWS);
 let hxGeneration = 0;
 let hxPopulation = 0;
 let hxPlaying = true;
+let hxMode: HxGridMode = 'hex';
 
 let hxPaintMode: HxPaintMode = null;
 let hxLastPaintCell = -1;
@@ -68,7 +81,8 @@ let hxVisibilityListener: (() => void) | null = null;
 let hxResizeObserver: ResizeObserver | null = null;
 
 let hxCw = 0, hxCh = 0;
-let hxHexSize = 14;
+let hxHexSize = 14;     // hex circumradius (also serves as square side / 1)
+let hxCellSize = 14;    // square cell side
 let hxOriginX = 0;
 let hxOriginY = 0;
 
@@ -85,21 +99,34 @@ function hxResize(): void {
     hxCanvas.style.width = w + 'px';
     hxCanvas.style.height = h + 'px';
 
-    const sX = (w - 8) / (1.5 * (HX_COLS - 1) + 2);
-    const sY = (h - 8) / (HX_SQRT3 * (HX_ROWS + 0.5));
-    hxHexSize = Math.max(4, Math.min(sX, sY));
-
-    const gridW = 1.5 * hxHexSize * (HX_COLS - 1) + 2 * hxHexSize;
-    const gridH = HX_SQRT3 * hxHexSize * (HX_ROWS + 0.5);
-    hxOriginX = (w - gridW) / 2 + hxHexSize;
-    hxOriginY = (h - gridH) / 2 + hxHexSize * HX_SQRT3 / 2;
+    if (hxMode === 'hex') {
+        const sX = (w - 8) / (1.5 * (HX_COLS - 1) + 2);
+        const sY = (h - 8) / (HX_SQRT3 * (HX_ROWS + 0.5));
+        hxHexSize = Math.max(4, Math.min(sX, sY));
+        const gridW = 1.5 * hxHexSize * (HX_COLS - 1) + 2 * hxHexSize;
+        const gridH = HX_SQRT3 * hxHexSize * (HX_ROWS + 0.5);
+        hxOriginX = (w - gridW) / 2 + hxHexSize;
+        hxOriginY = (h - gridH) / 2 + hxHexSize * HX_SQRT3 / 2;
+    } else {
+        hxCellSize = Math.max(4, Math.min((w - 8) / HX_COLS, (h - 8) / HX_ROWS));
+        const gridW = HX_COLS * hxCellSize;
+        const gridH = HX_ROWS * hxCellSize;
+        hxOriginX = (w - gridW) / 2;
+        hxOriginY = (h - gridH) / 2;
+    }
 }
 
 function hxCellCenter(col: number, row: number): { x: number; y: number } {
-    const x = hxOriginX + 1.5 * hxHexSize * col;
-    const yOffset = (col & 1) ? HX_SQRT3 * hxHexSize * 0.5 : 0;
-    const y = hxOriginY + HX_SQRT3 * hxHexSize * row + yOffset;
-    return { x, y };
+    if (hxMode === 'hex') {
+        const x = hxOriginX + 1.5 * hxHexSize * col;
+        const yOffset = (col & 1) ? HX_SQRT3 * hxHexSize * 0.5 : 0;
+        const y = hxOriginY + HX_SQRT3 * hxHexSize * row + yOffset;
+        return { x, y };
+    }
+    return {
+        x: hxOriginX + (col + 0.5) * hxCellSize,
+        y: hxOriginY + (row + 0.5) * hxCellSize
+    };
 }
 
 function hxHexPath(cx: number, cy: number, s: number): void {
@@ -114,6 +141,12 @@ function hxHexPath(cx: number, cy: number, s: number): void {
 }
 
 function hxPixelToCell(mx: number, my: number): number {
+    if (hxMode === 'square') {
+        const col = Math.floor((mx - hxOriginX) / hxCellSize);
+        const row = Math.floor((my - hxOriginY) / hxCellSize);
+        if (col < 0 || col >= HX_COLS || row < 0 || row >= HX_ROWS) return -1;
+        return hxIdx(col, row);
+    }
     const approxCol = Math.round((mx - hxOriginX) / (1.5 * hxHexSize));
     const c0 = Math.max(0, approxCol - 1);
     const c1 = Math.min(HX_COLS - 1, approxCol + 1);
@@ -150,27 +183,53 @@ function hxRecountPop(): void {
 
 function hxStep(): void {
     let pop = 0;
-    for (let col = 0; col < HX_COLS; col++) {
-        const offsets = (col & 1) ? HX_NEIGHBORS_ODD : HX_NEIGHBORS_EVEN;
-        for (let row = 0; row < HX_ROWS; row++) {
-            let alive = 0;
-            for (let k = 0; k < 6; k++) {
-                const dc = offsets[k][0];
-                const dr = offsets[k][1];
-                const nc = (col + dc + HX_COLS) % HX_COLS;
-                const nr = (row + dr + HX_ROWS) % HX_ROWS;
-                if (hxCells[nc * HX_ROWS + nr]) alive++;
+    if (hxMode === 'hex') {
+        for (let col = 0; col < HX_COLS; col++) {
+            const offsets = (col & 1) ? HX_NEIGHBORS_ODD : HX_NEIGHBORS_EVEN;
+            for (let row = 0; row < HX_ROWS; row++) {
+                let alive = 0;
+                for (let k = 0; k < 6; k++) {
+                    const dc = offsets[k][0];
+                    const dr = offsets[k][1];
+                    const nc = (col + dc + HX_COLS) % HX_COLS;
+                    const nr = (row + dr + HX_ROWS) % HX_ROWS;
+                    if (hxCells[nc * HX_ROWS + nr]) alive++;
+                }
+                const idx = col * HX_ROWS + row;
+                const wasAlive = hxCells[idx] === 1;
+                // B2 / S3,4 — Carter Bays Hex-Life
+                const willLive = wasAlive ? (alive === 3 || alive === 4) : (alive === 2);
+                hxNext[idx] = willLive ? 1 : 0;
+                if (willLive) pop++;
+                if (willLive) {
+                    hxAge[idx] = Math.min(255, hxAge[idx] + 14);
+                } else {
+                    hxAge[idx] = hxAge[idx] > 28 ? hxAge[idx] - 28 : 0;
+                }
             }
-            const idx = col * HX_ROWS + row;
-            const wasAlive = hxCells[idx] === 1;
-            // B2 / S3,4 — Carter Bays Hex-Life
-            const willLive = wasAlive ? (alive === 3 || alive === 4) : (alive === 2);
-            hxNext[idx] = willLive ? 1 : 0;
-            if (willLive) pop++;
-            if (willLive) {
-                hxAge[idx] = Math.min(255, hxAge[idx] + 14);
-            } else {
-                hxAge[idx] = hxAge[idx] > 28 ? hxAge[idx] - 28 : 0;
+        }
+    } else {
+        for (let col = 0; col < HX_COLS; col++) {
+            for (let row = 0; row < HX_ROWS; row++) {
+                let alive = 0;
+                for (let k = 0; k < 8; k++) {
+                    const dc = SQ_NEIGHBORS[k][0];
+                    const dr = SQ_NEIGHBORS[k][1];
+                    const nc = (col + dc + HX_COLS) % HX_COLS;
+                    const nr = (row + dr + HX_ROWS) % HX_ROWS;
+                    if (hxCells[nc * HX_ROWS + nr]) alive++;
+                }
+                const idx = col * HX_ROWS + row;
+                const wasAlive = hxCells[idx] === 1;
+                // B3 / S2,3 — Conway's classic Game of Life
+                const willLive = wasAlive ? (alive === 2 || alive === 3) : (alive === 3);
+                hxNext[idx] = willLive ? 1 : 0;
+                if (willLive) pop++;
+                if (willLive) {
+                    hxAge[idx] = Math.min(255, hxAge[idx] + 14);
+                } else {
+                    hxAge[idx] = hxAge[idx] > 28 ? hxAge[idx] - 28 : 0;
+                }
             }
         }
     }
@@ -224,6 +283,25 @@ function hxStepBtn(): void {
     hxStep();
 }
 
+function hxApplyModeUI(): void {
+    hxBtnModeHex.classList.toggle('active', hxMode === 'hex');
+    hxBtnModeSq.classList.toggle('active', hxMode === 'square');
+    hxRuleLabel.textContent = hxMode === 'hex'
+        ? 'Hex-Life · B2 / S3,4'
+        : 'Conway · B3 / S2,3';
+}
+
+function hxSetMode(mode: HxGridMode): void {
+    if (hxMode === mode) return;
+    hxMode = mode;
+    hxApplyModeUI();
+    // Geometry depends on mode; recompute synchronously so paint hit-tests
+    // and the next draw both see the new layout, even if rAF is paused.
+    hxCw = 0; hxCh = 0;
+    hxResize();
+    hxLastTickMs = performance.now();
+}
+
 // --- RENDER ---
 function hxThemeColor(): string {
     const s = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
@@ -237,41 +315,83 @@ function hxDraw(): void {
     const live = hxThemeColor();
     const showHover = !hxPlaying && hxHoverCell >= 0;
 
+    if (hxMode === 'hex') {
+        for (let col = 0; col < HX_COLS; col++) {
+            for (let row = 0; row < HX_ROWS; row++) {
+                const idx = col * HX_ROWS + row;
+                const c = hxCellCenter(col, row);
+                const alive = hxCells[idx] === 1;
+                const ageA = hxAge[idx] / 255;
+
+                hxHexPath(c.x, c.y, hxHexSize - 1);
+                if (alive) {
+                    hxCtx.fillStyle = live;
+                    hxCtx.globalAlpha = 0.85;
+                    hxCtx.fill();
+                    hxCtx.globalAlpha = 1;
+                } else if (ageA > 0.04) {
+                    hxCtx.fillStyle = live;
+                    hxCtx.globalAlpha = ageA * 0.18;
+                    hxCtx.fill();
+                    hxCtx.globalAlpha = 1;
+                } else {
+                    hxCtx.fillStyle = 'rgba(20,22,30,0.55)';
+                    hxCtx.fill();
+                }
+
+                if (showHover && idx === hxHoverCell) {
+                    hxHexPath(c.x, c.y, hxHexSize - 1.5);
+                    hxCtx.strokeStyle = 'rgba(255,255,255,0.7)';
+                    hxCtx.lineWidth = 1.5;
+                    hxCtx.stroke();
+                }
+
+                hxHexPath(c.x, c.y, hxHexSize - 0.5);
+                hxCtx.strokeStyle = alive ? live : 'rgba(120,130,160,0.18)';
+                hxCtx.lineWidth = alive ? 1 : 0.6;
+                hxCtx.globalAlpha = alive ? 0.9 : 1;
+                hxCtx.stroke();
+                hxCtx.globalAlpha = 1;
+            }
+        }
+        return;
+    }
+
+    // Square / Conway mode
+    const cs = hxCellSize;
     for (let col = 0; col < HX_COLS; col++) {
         for (let row = 0; row < HX_ROWS; row++) {
             const idx = col * HX_ROWS + row;
-            const c = hxCellCenter(col, row);
+            const x = hxOriginX + col * cs;
+            const y = hxOriginY + row * cs;
             const alive = hxCells[idx] === 1;
             const ageA = hxAge[idx] / 255;
 
-            hxHexPath(c.x, c.y, hxHexSize - 1);
             if (alive) {
                 hxCtx.fillStyle = live;
                 hxCtx.globalAlpha = 0.85;
-                hxCtx.fill();
+                hxCtx.fillRect(x + 0.5, y + 0.5, cs - 1, cs - 1);
                 hxCtx.globalAlpha = 1;
             } else if (ageA > 0.04) {
                 hxCtx.fillStyle = live;
                 hxCtx.globalAlpha = ageA * 0.18;
-                hxCtx.fill();
+                hxCtx.fillRect(x + 0.5, y + 0.5, cs - 1, cs - 1);
                 hxCtx.globalAlpha = 1;
             } else {
                 hxCtx.fillStyle = 'rgba(20,22,30,0.55)';
-                hxCtx.fill();
+                hxCtx.fillRect(x + 0.5, y + 0.5, cs - 1, cs - 1);
             }
 
             if (showHover && idx === hxHoverCell) {
-                hxHexPath(c.x, c.y, hxHexSize - 1.5);
                 hxCtx.strokeStyle = 'rgba(255,255,255,0.7)';
                 hxCtx.lineWidth = 1.5;
-                hxCtx.stroke();
+                hxCtx.strokeRect(x + 1, y + 1, cs - 2, cs - 2);
             }
 
-            hxHexPath(c.x, c.y, hxHexSize - 0.5);
             hxCtx.strokeStyle = alive ? live : 'rgba(120,130,160,0.18)';
             hxCtx.lineWidth = alive ? 1 : 0.6;
             hxCtx.globalAlpha = alive ? 0.9 : 1;
-            hxCtx.stroke();
+            hxCtx.strokeRect(x + 0.5, y + 0.5, cs - 1, cs - 1);
             hxCtx.globalAlpha = 1;
         }
     }
@@ -343,6 +463,8 @@ hxBtnPlay.addEventListener('click', hxTogglePlay);
 hxBtnStep.addEventListener('click', hxStepBtn);
 hxBtnRand.addEventListener('click', hxRandomize);
 hxBtnClear.addEventListener('click', hxClear);
+hxBtnModeHex.addEventListener('click', () => hxSetMode('hex'));
+hxBtnModeSq.addEventListener('click', () => hxSetMode('square'));
 
 hxSpeedInput.addEventListener('input', () => {
     hxSpeedVal.textContent = hxSpeedInput.value;
@@ -360,9 +482,9 @@ hxCanvas.addEventListener('contextmenu', (e) => { if (!hxPlaying) e.preventDefau
 
 // --- LAUNCH / CLOSE ---
 const hxBootLines: string[] = [
-    "> EXEC hex_life.exe",
-    "> ALLOC HEX GRID [32 x 28]... [OK]",
-    "> RULE: B2 / S3,4 (CARTER BAYS)",
+    "> EXEC game_of_life.exe",
+    "> ALLOC GRID [32 x 28]... [OK]",
+    "> RULES: HEX B2/S3,4 | SQUARE B3/S2,3",
     "> WRAP: TOROIDAL",
     "> DISPLAY READY."
 ];
@@ -405,6 +527,7 @@ function launchHexLife(): void {
         cancelHxBoot = null;
         hxAppEl.style.display = 'flex';
         hxActive = true;
+        hxApplyModeUI();
         hxRandomize();
         hxSetPlaying(true);
         hxAnimate();
