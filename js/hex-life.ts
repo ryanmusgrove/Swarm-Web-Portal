@@ -10,8 +10,10 @@ declare function rememberFocusForLayer(layerId: string): void;
 declare function restoreFocusForLayer(layerId: string): void;
 
 // --- Constants ---
-const HX_COLS = 32;
-const HX_ROWS = 28;
+const BASE_COLS = 32;
+const BASE_ROWS = 28;
+let HX_COLS = BASE_COLS;
+let HX_ROWS = BASE_ROWS;
 const HX_SQRT3 = Math.sqrt(3);
 
 // Flat-top hex, odd-q offset coords. Neighbour deltas depend on column parity.
@@ -36,6 +38,7 @@ const SQ_NEIGHBORS: ReadonlyArray<readonly [number, number]> = [
 // --- Types ---
 type HxPaintMode = 'alive' | 'dead' | null;
 type HxGridMode = 'hex' | 'square';
+type HxResolution = 1 | 2;
 
 // --- DOM REFS ---
 const hxCanvas       = document.getElementById('hexLifeCanvas') as HTMLCanvasElement;
@@ -51,6 +54,8 @@ const hxBtnRand      = document.getElementById('hexlife-btn-rand') as HTMLButton
 const hxBtnClear     = document.getElementById('hexlife-btn-clear') as HTMLButtonElement;
 const hxBtnModeHex   = document.getElementById('hexlife-mode-hex') as HTMLButtonElement;
 const hxBtnModeSq    = document.getElementById('hexlife-mode-square') as HTMLButtonElement;
+const hxBtnRes1x     = document.getElementById('hexlife-res-1x') as HTMLButtonElement;
+const hxBtnRes2x     = document.getElementById('hexlife-res-2x') as HTMLButtonElement;
 const hxRuleLabel    = document.getElementById('hexlife-rule-label') as HTMLDivElement;
 const hxSpeedInput   = document.getElementById('hexlife-speed') as HTMLInputElement;
 const hxSpeedVal     = document.getElementById('hexlife-speed-val') as HTMLSpanElement;
@@ -62,11 +67,12 @@ const hxInfoPop      = document.getElementById('hexlife-info-pop') as HTMLSpanEl
 // --- STATE ---
 let hxCells: Uint8Array = new Uint8Array(HX_COLS * HX_ROWS);
 let hxNext:  Uint8Array = new Uint8Array(HX_COLS * HX_ROWS);
-const hxAge: Uint8Array = new Uint8Array(HX_COLS * HX_ROWS);
+let hxAge:   Uint8Array = new Uint8Array(HX_COLS * HX_ROWS);
 let hxGeneration = 0;
 let hxPopulation = 0;
 let hxPlaying = true;
 let hxMode: HxGridMode = 'hex';
+let hxResolution: HxResolution = 1;
 
 let hxPaintMode: HxPaintMode = null;
 let hxLastPaintCell = -1;
@@ -286,9 +292,10 @@ function hxStepBtn(): void {
 function hxApplyModeUI(): void {
     hxBtnModeHex.classList.toggle('active', hxMode === 'hex');
     hxBtnModeSq.classList.toggle('active', hxMode === 'square');
-    hxRuleLabel.textContent = hxMode === 'hex'
-        ? 'Hex-Life · B2 / S3,4'
-        : 'Conway · B3 / S2,3';
+    hxBtnRes1x.classList.toggle('active', hxResolution === 1);
+    hxBtnRes2x.classList.toggle('active', hxResolution === 2);
+    const ruleText = hxMode === 'hex' ? 'Hex-Life · B2 / S3,4' : 'Conway · B3 / S2,3';
+    hxRuleLabel.textContent = `${ruleText} · ${HX_COLS}×${HX_ROWS}`;
 }
 
 function hxSetMode(mode: HxGridMode): void {
@@ -300,6 +307,30 @@ function hxSetMode(mode: HxGridMode): void {
     hxCw = 0; hxCh = 0;
     hxResize();
     hxLastTickMs = performance.now();
+    if (hxActive) hxDraw();
+}
+
+function hxSetResolution(scale: HxResolution): void {
+    if (hxResolution === scale) return;
+    hxResolution = scale;
+    HX_COLS = BASE_COLS * scale;
+    HX_ROWS = BASE_ROWS * scale;
+    // Reallocate buffers at the new size; old cell state is intentionally discarded.
+    hxCells = new Uint8Array(HX_COLS * HX_ROWS);
+    hxNext  = new Uint8Array(HX_COLS * HX_ROWS);
+    hxAge   = new Uint8Array(HX_COLS * HX_ROWS);
+    hxGeneration = 0;
+    hxPopulation = 0;
+    hxPaintMode = null;
+    hxLastPaintCell = -1;
+    hxHoverCell = -1;
+    // Force geometry recompute (cell pixel size depends on COLS/ROWS).
+    hxCw = 0; hxCh = 0;
+    hxResize();
+    hxApplyModeUI();
+    hxRandomize();
+    hxLastTickMs = performance.now();
+    if (hxActive) hxDraw();
 }
 
 // --- RENDER ---
@@ -465,6 +496,8 @@ hxBtnRand.addEventListener('click', hxRandomize);
 hxBtnClear.addEventListener('click', hxClear);
 hxBtnModeHex.addEventListener('click', () => hxSetMode('hex'));
 hxBtnModeSq.addEventListener('click', () => hxSetMode('square'));
+hxBtnRes1x.addEventListener('click', () => hxSetResolution(1));
+hxBtnRes2x.addEventListener('click', () => hxSetResolution(2));
 
 hxSpeedInput.addEventListener('input', () => {
     hxSpeedVal.textContent = hxSpeedInput.value;
@@ -483,7 +516,7 @@ hxCanvas.addEventListener('contextmenu', (e) => { if (!hxPlaying) e.preventDefau
 // --- LAUNCH / CLOSE ---
 const hxBootLines: string[] = [
     "> EXEC game_of_life.exe",
-    "> ALLOC GRID [32 x 28]... [OK]",
+    "> ALLOC GRID 1× / 2× (32×28 / 64×56)... [OK]",
     "> RULES: HEX B2/S3,4 | SQUARE B3/S2,3",
     "> WRAP: TOROIDAL",
     "> DISPLAY READY."

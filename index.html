@@ -452,7 +452,7 @@
         <div id="hexlife-app" style="display:none; flex-direction:column; flex:1; min-height:0;">
             <div class="plab-topbar">
                 <button class="plab-topbar-btn" onclick="closeHexLife()">&#8592; EXIT</button>
-                <span class="text-theme" style="font-size:0.85rem; font-weight:bold; letter-spacing:2px;">GAME_OF_LIFE <span style="opacity:0.4">v1.1</span></span>
+                <span class="text-theme" style="font-size:0.85rem; font-weight:bold; letter-spacing:2px;">GAME_OF_LIFE <span style="opacity:0.4">v1.2</span></span>
                 <button class="plab-topbar-btn" onclick="toggleHexLifeControls()">&#9881; CTRL</button>
             </div>
             <div class="plab-body">
@@ -471,7 +471,13 @@
                         <button class="plab-btn active" id="hexlife-mode-hex">&#11042; Hex</button>
                         <button class="plab-btn" id="hexlife-mode-square">&#9632; Square</button>
                     </div>
-                    <div id="hexlife-rule-label" style="font-size:0.6rem; opacity:0.45; text-align:center; margin-top:4px; letter-spacing:1px;">Hex-Life &middot; B2 / S3,4</div>
+
+                    <div class="plab-section-title">Resolution</div>
+                    <div class="plab-mode-grid">
+                        <button class="plab-btn active" id="hexlife-res-1x">1&times;</button>
+                        <button class="plab-btn" id="hexlife-res-2x">2&times;</button>
+                    </div>
+                    <div id="hexlife-rule-label" style="font-size:0.6rem; opacity:0.45; text-align:center; margin-top:4px; letter-spacing:1px;">Hex-Life &middot; B2 / S3,4 &middot; 32&times;28</div>
 
                     <div class="plab-section-title">Operations</div>
                     <button class="plab-btn hexlife-btn-pause" id="hexlife-btn-play">&#9208; Pause</button>
@@ -625,6 +631,6 @@
 <script type="module" src="js/honey-bee-sim.ts?v=2"></script>
 <script type="module" src="js/docs-viewer.ts?v=2"></script>
 <script type="module" src="js/ring-buffer.ts?v=3"></script>
-<script type="module" src="js/hex-life.ts?v=2"></script>
+<script type="module" src="js/hex-life.ts?v=3"></script>
 </body>
 </html>

@@ -1208,7 +1208,7 @@ esc(`for every cell:
         id: 'topology',
         title: 'GRIDS & TOROIDAL WRAP',
         content: `
-<p>Both grids are 32 columns wide × 28 rows tall and wrap toroidally — cells at the right edge are neighbours of cells at the left edge, and cells at the bottom are neighbours of cells at the top. There are no special edge cases; a glider launched in any direction eventually returns to its starting cell.</p>
+<p>The default grid is 32 columns wide × 28 rows tall (896 cells), with an optional 2× resolution mode that doubles each dimension to 64 × 56 (3584 cells — four times as many in the same canvas area). In both resolutions the grid wraps toroidally — cells at the right edge are neighbours of cells at the left edge, and cells at the bottom are neighbours of cells at the top. There are no special edge cases; a glider launched in any direction eventually returns to its starting cell.</p>
 ` + makeCodeBlock('Toroidal Neighbour',
 esc(`const nc = (col + dc + COLS) % COLS;
 const nr = (row + dr + ROWS) % ROWS;
@@ -1227,6 +1227,7 @@ neighbour row = (row + dr + ROWS) mod ROWS`)) + `
 <p>The right-hand panel exposes the full simulation interface:</p>
 <ul>
 <li><strong>Hex / Square</strong> — switch grid topology and rule on the fly. Cell array and generation counter are preserved across the switch.</li>
+<li><strong>1× / 2×</strong> — switch grid resolution between 32×28 (default, 896 cells) and 64×56 (3584 cells, four times as many in the same canvas area). Switching resolution discards the current cell state and re-seeds at the current density slider value.</li>
 <li><strong>Pause / Play</strong> — toggle the tick loop. While paused you can edit cells; while running the grid advances at the configured speed.</li>
 <li><strong>Step</strong> — advance exactly one generation. Pauses the simulation if it was running, so you can inspect each tick.</li>
 <li><strong>Randomize</strong> — re-seed the entire grid at the current density slider value, and reset the generation counter to 0.</li>
@@ -1275,7 +1276,7 @@ const docsRegistry: Record<string, DocsEntry> = {
     'particle-lab':  { title: 'PARTICLE LAB',    version: 'v1.6', sections: particleLabSections },
     'bee-sim':       { title: 'BEE SIM',         version: 'v1.0', sections: beeSimSections },
     'ring-buffer':   { title: 'RING BUFFER',     version: 'v1.0', sections: ringBufferSections },
-    'hex-life':      { title: 'GAME OF LIFE',    version: 'v1.1', sections: hexLifeSections }
+    'hex-life':      { title: 'GAME OF LIFE',    version: 'v1.2', sections: hexLifeSections }
 };
 
 // ══════════════════════════════════════════
