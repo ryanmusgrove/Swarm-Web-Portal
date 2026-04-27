@@ -84,6 +84,7 @@ let hxLastTickMs = 0;
 let cancelHxBoot: (() => void) | null = null;
 let hxResizeListener: (() => void) | null = null;
 let hxVisibilityListener: (() => void) | null = null;
+let hxKeydownListener: ((e: KeyboardEvent) => void) | null = null;
 let hxResizeObserver: ResizeObserver | null = null;
 
 let hxCw = 0, hxCh = 0;
@@ -269,7 +270,8 @@ function hxClear(): void {
 
 function hxSetPlaying(playing: boolean): void {
     hxPlaying = playing;
-    hxBtnPlay.innerHTML = hxPlaying ? '⏸ Pause' : '▶ Play';
+    const label = hxPlaying ? '⏸ Pause' : '▶ Play';
+    hxBtnPlay.innerHTML = `${label} <span class="hexlife-kbd">[Space]</span>`;
     hxBtnPlay.classList.toggle('hexlife-btn-play', !hxPlaying);
     hxBtnPlay.classList.toggle('hexlife-btn-pause', hxPlaying);
     hxLastTickMs = performance.now();
@@ -287,6 +289,62 @@ function hxTogglePlay(): void {
 function hxStepBtn(): void {
     if (hxPlaying) hxSetPlaying(false);
     hxStep();
+}
+
+function hxIsTypingTarget(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) return false;
+    const tag = target.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+    if (target.isContentEditable) return true;
+    return false;
+}
+
+function hxAdjustSpeed(delta: number): void {
+    const min = parseInt(hxSpeedInput.min || '1', 10);
+    const max = parseInt(hxSpeedInput.max || '10', 10);
+    const cur = parseInt(hxSpeedInput.value || '1', 10);
+    const next = Math.max(min, Math.min(max, cur + delta));
+    if (next === cur) return;
+    hxSpeedInput.value = String(next);
+    hxSpeedInput.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function hxHandleKeydown(e: KeyboardEvent): void {
+    if (!hxActive) return;
+    if (hxIsTypingTarget(e.target)) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+    const key = e.key;
+    if (key === ' ' || key === 'Spacebar') {
+        e.preventDefault();
+        hxTogglePlay();
+        return;
+    }
+    if (key === 'ArrowRight') {
+        e.preventDefault();
+        hxStepBtn();
+        return;
+    }
+    if (key.toLowerCase() === 'r') {
+        e.preventDefault();
+        hxRandomize();
+        return;
+    }
+    if (key === 'Backspace' && e.shiftKey) {
+        e.preventDefault();
+        hxClear();
+        return;
+    }
+    if (key === 'ArrowUp') {
+        e.preventDefault();
+        hxAdjustSpeed(+1);
+        return;
+    }
+    if (key === 'ArrowDown') {
+        e.preventDefault();
+        hxAdjustSpeed(-1);
+        return;
+    }
 }
 
 function hxApplyModeUI(): void {
@@ -555,6 +613,10 @@ function launchHexLife(): void {
         };
         document.addEventListener('visibilitychange', hxVisibilityListener);
     }
+    if (!hxKeydownListener) {
+        hxKeydownListener = hxHandleKeydown;
+        document.addEventListener('keydown', hxKeydownListener);
+    }
 
     cancelHxBoot = appBootAnimation(hxLoadingEl, hxLoadingText, hxBootLines, () => {
         cancelHxBoot = null;
@@ -586,6 +648,10 @@ function closeHexLife(): void {
         if (hxVisibilityListener) {
             document.removeEventListener('visibilitychange', hxVisibilityListener);
             hxVisibilityListener = null;
+        }
+        if (hxKeydownListener) {
+            document.removeEventListener('keydown', hxKeydownListener);
+            hxKeydownListener = null;
         }
         if (hxResizeObserver) {
             hxResizeObserver.disconnect();

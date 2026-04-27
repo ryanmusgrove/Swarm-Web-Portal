@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/cyberdeck.css?v=2">
+    <link rel="stylesheet" href="css/cyberdeck.css?v=3">
 </head>
 <body>
 
@@ -480,14 +480,14 @@
                     <div id="hexlife-rule-label" style="font-size:0.6rem; opacity:0.45; text-align:center; margin-top:4px; letter-spacing:1px;">Hex-Life &middot; B2 / S3,4 &middot; 32&times;28</div>
 
                     <div class="plab-section-title">Operations</div>
-                    <button class="plab-btn hexlife-btn-pause" id="hexlife-btn-play">&#9208; Pause</button>
-                    <button class="plab-btn hexlife-btn-step" id="hexlife-btn-step">&#9197; Step</button>
-                    <button class="plab-btn hexlife-btn-rand" id="hexlife-btn-rand">&#127922; Randomize</button>
-                    <button class="plab-btn hexlife-btn-clear" id="hexlife-btn-clear">&#128465; Clear</button>
+                    <button class="plab-btn hexlife-btn-pause" id="hexlife-btn-play">&#9208; Pause <span class="hexlife-kbd">[Space]</span></button>
+                    <button class="plab-btn hexlife-btn-step" id="hexlife-btn-step">&#9197; Step <span class="hexlife-kbd">[&rarr;]</span></button>
+                    <button class="plab-btn hexlife-btn-rand" id="hexlife-btn-rand">&#127922; Randomize <span class="hexlife-kbd">[R]</span></button>
+                    <button class="plab-btn hexlife-btn-clear" id="hexlife-btn-clear">&#128465; Clear <span class="hexlife-kbd">[&#8679;&#9003;]</span></button>
 
                     <div class="plab-section-title">Speed</div>
                     <div class="plab-cg">
-                        <label>Generations / sec <span id="hexlife-speed-val" class="plab-val">10</span></label>
+                        <label>Generations / sec <span class="hexlife-kbd">[&uarr;/&darr;]</span> <span id="hexlife-speed-val" class="plab-val">10</span></label>
                         <input type="range" id="hexlife-speed" min="1" max="10" value="10" step="1">
                     </div>
 
@@ -497,8 +497,9 @@
                         <input type="range" id="hexlife-density" min="5" max="70" value="28" step="1">
                     </div>
 
-                    <div style="margin-top:auto; text-align:center; font-size:0.6rem; opacity:0.3; padding-top:8px;">
-                        LMB paint &middot; RMB erase &middot; pause to edit
+                    <div style="margin-top:auto; text-align:center; font-size:0.6rem; opacity:0.3; padding-top:8px; line-height:1.5;">
+                        LMB paint &middot; RMB erase &middot; pause to edit<br>
+                        Space play &middot; &rarr; step &middot; R rand &middot; &#8679;&#9003; clear &middot; &uarr;&darr; speed
                     </div>
                 </div>
             </div>
