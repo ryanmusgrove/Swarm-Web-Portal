@@ -10,10 +10,17 @@ declare function rememberFocusForLayer(layerId: string): void;
 declare function restoreFocusForLayer(layerId: string): void;
 
 // --- Constants ---
-const BASE_COLS = 32;
-const BASE_ROWS = 28;
-let HX_COLS = BASE_COLS;
-let HX_ROWS = BASE_ROWS;
+const BASE_COLS_SQUARE = 32;
+const BASE_ROWS_SQUARE = 28;
+const BASE_COLS_WIDE = 56;
+const BASE_ROWS_WIDE = 28;
+function hxBaseDims(): { cols: number; rows: number } {
+    return document.body.classList.contains('widescreen-mode')
+        ? { cols: BASE_COLS_WIDE, rows: BASE_ROWS_WIDE }
+        : { cols: BASE_COLS_SQUARE, rows: BASE_ROWS_SQUARE };
+}
+let HX_COLS = hxBaseDims().cols;
+let HX_ROWS = hxBaseDims().rows;
 const HX_SQRT3 = Math.sqrt(3);
 
 // Flat-top hex, odd-q offset coords. Neighbour deltas depend on column parity.
@@ -86,6 +93,7 @@ let hxResizeListener: (() => void) | null = null;
 let hxVisibilityListener: (() => void) | null = null;
 let hxKeydownListener: ((e: KeyboardEvent) => void) | null = null;
 let hxResizeObserver: ResizeObserver | null = null;
+let hxDisplayModeListener: (() => void) | null = null;
 
 let hxCw = 0, hxCh = 0;
 let hxHexSize = 14;     // hex circumradius (also serves as square side / 1)
@@ -371,8 +379,9 @@ function hxSetMode(mode: HxGridMode): void {
 function hxSetResolution(scale: HxResolution): void {
     if (hxResolution === scale) return;
     hxResolution = scale;
-    HX_COLS = BASE_COLS * scale;
-    HX_ROWS = BASE_ROWS * scale;
+    const base = hxBaseDims();
+    HX_COLS = base.cols * scale;
+    HX_ROWS = base.rows * scale;
     // Reallocate buffers at the new size; old cell state is intentionally discarded.
     hxCells = new Uint8Array(HX_COLS * HX_ROWS);
     hxNext  = new Uint8Array(HX_COLS * HX_ROWS);
@@ -386,6 +395,25 @@ function hxSetResolution(scale: HxResolution): void {
     hxCw = 0; hxCh = 0;
     hxResize();
     hxApplyModeUI();
+    hxRandomize();
+    hxLastTickMs = performance.now();
+    if (hxActive) hxDraw();
+}
+
+function hxRebuildForDisplayMode(): void {
+    const base = hxBaseDims();
+    HX_COLS = base.cols * hxResolution;
+    HX_ROWS = base.rows * hxResolution;
+    hxCells = new Uint8Array(HX_COLS * HX_ROWS);
+    hxNext  = new Uint8Array(HX_COLS * HX_ROWS);
+    hxAge   = new Uint8Array(HX_COLS * HX_ROWS);
+    hxGeneration = 0;
+    hxPopulation = 0;
+    hxPaintMode = null;
+    hxLastPaintCell = -1;
+    hxHoverCell = -1;
+    hxCw = 0; hxCh = 0;
+    hxResize();
     hxRandomize();
     hxLastTickMs = performance.now();
     if (hxActive) hxDraw();
@@ -598,6 +626,10 @@ function launchHexLife(): void {
         hxResizeObserver = new ResizeObserver(() => { if (hxActive) hxResize(); });
         hxResizeObserver.observe(hxWrap);
     }
+    if (!hxDisplayModeListener) {
+        hxDisplayModeListener = () => { if (hxActive) hxRebuildForDisplayMode(); };
+        window.addEventListener('cyberdeck:displaymode', hxDisplayModeListener);
+    }
     if (!hxVisibilityListener) {
         hxVisibilityListener = () => {
             if (!hxActive) return;
@@ -656,6 +688,10 @@ function closeHexLife(): void {
         if (hxResizeObserver) {
             hxResizeObserver.disconnect();
             hxResizeObserver = null;
+        }
+        if (hxDisplayModeListener) {
+            window.removeEventListener('cyberdeck:displaymode', hxDisplayModeListener);
+            hxDisplayModeListener = null;
         }
         hxPaintMode = null;
         hxHoverCell = -1;

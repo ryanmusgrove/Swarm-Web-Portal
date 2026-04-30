@@ -98,6 +98,11 @@ input[type="color"]:focus-visible {
     position: relative; z-index: 10;
 }
 
+/* --- WIDESCREEN MODE --- */
+body.widescreen-mode .screen-container {
+    max-width: calc(70vh * 16 / 9);
+}
+
 .deck-select {
     background: #111; color: var(--primary);
     border: 2px solid #333; padding: 4px 8px; border-radius: 4px;

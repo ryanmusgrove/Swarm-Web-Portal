@@ -46,8 +46,11 @@ const themes: Record<ThemeKey, CyberdeckTheme> = {
     pink:  { ui: '#ec4899', uiDim: 'rgba(236,72,153,0.2)',  uiBorder: '#831843', flames: ['#831843','#be185d','#ec4899','#fce7f3'] }
 };
 
+type DisplayMode = 'square' | 'widescreen';
+
 let currentThemeKey: ThemeKey = 'amber';
 let currentProtocol: string = 'standby';
+let currentDisplayMode: DisplayMode = 'square';
 let osIsActive: boolean = false;
 let isPowerOn: boolean = false;
 let activeTimeouts: number[] = [];
@@ -332,6 +335,15 @@ function toggleLightMode(): void {
     document.body.classList.toggle('light-mode', isLightMode);
     const icon = document.getElementById('mode-icon') as HTMLSpanElement | null;
     if (icon) icon.innerHTML = isLightMode ? '&#9788;' : '&#9790;';
+}
+
+// --- DISPLAY MODE (Square / Widescreen) ---
+function toggleDisplayMode(): void {
+    currentDisplayMode = currentDisplayMode === 'square' ? 'widescreen' : 'square';
+    document.body.classList.toggle('widescreen-mode', currentDisplayMode === 'widescreen');
+    const icon = document.getElementById('display-mode-icon') as HTMLSpanElement | null;
+    if (icon) icon.innerHTML = currentDisplayMode === 'widescreen' ? '&#9645;' : '&#9633;';
+    window.dispatchEvent(new CustomEvent('cyberdeck:displaymode', { detail: { mode: currentDisplayMode } }));
 }
 
 // --- BUG REPORT ---
@@ -844,6 +856,7 @@ bindBugReportInputs();
 // Inline HTML handlers. Remove a registration only after replacing its HTML caller.
 (window as any).changeTheme = changeTheme;
 (window as any).toggleLightMode = toggleLightMode;
+(window as any).toggleDisplayMode = toggleDisplayMode;
 (window as any).changeProtocol = changeProtocol;
 (window as any).toggleBugReport = toggleBugReport;
 (window as any).cancelBugReport = cancelBugReport;

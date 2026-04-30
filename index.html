@@ -602,6 +602,9 @@
             <button type="button" id="mode-toggle" class="mode-toggle" aria-label="Toggle light or dark mode" onclick="toggleLightMode()">
                 <span class="mode-icon" id="mode-icon">&#9790;</span>
             </button>
+            <button type="button" id="display-mode-toggle" class="mode-toggle" aria-label="Toggle widescreen display mode" onclick="toggleDisplayMode()">
+                <span class="mode-icon" id="display-mode-icon">&#9633;</span>
+            </button>
             <div class="flex items-center gap-2">
                 <label for="protocol-selector" class="text-xs text-zinc-400 font-bold">PROTOCOL:</label>
                 <select id="protocol-selector" class="deck-select" onchange="changeProtocol(this.value)">
